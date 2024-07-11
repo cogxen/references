@@ -1,5 +1,5 @@
 async function generateSubmissions() {
-  const response = await fetch('/data/submissions.json');
+  const response = await fetch('data/submissions.json');
   const submissionsData = await response.json();
 
   const submissionsSection = document.querySelector('.w-full.flex.flex-col.items-center.gap-2.py-8');
