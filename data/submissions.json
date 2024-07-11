@@ -2,7 +2,11 @@
   "submissions": [
     {
       "name": "Row Indexes",
-      "url": "/references/sorting-and-filtering-rows/row-indexes/notebook.html"
+      "url": "/references/sorting-and-filtering-rows/row-indexes/index.html"
+    },
+    {
+      "name": "Sorting Rows",
+      "url": "/references/sorting-and-filtering-rows/sorting-rows/index.html"
     }
   ]
 }
