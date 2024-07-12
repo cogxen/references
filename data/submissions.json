@@ -7,6 +7,14 @@
     {
       "name": "Sorting Rows",
       "url": "/references/sorting-and-filtering-rows/sorting-rows/index.html"
+    },
+    {
+      "name": "Selecting Rows",
+      "url": "/references/sorting-and-filtering-rows/selecting-rows/index.html"
+    },
+    {
+      "name": "Selecting Ranges of Rows",
+      "url": "/references/sorting-and-filtering-rows/selecting-ranges-of-rows/index.html"
     }
   ]
 }
