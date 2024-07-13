@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="shortcut icon" href="/src/img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/src/styles/jp.css" />
+    <title>Booleans with And</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
+      defer
+    ></script>
+    <script type="text/x-mathjax-config" defer>
+      init_mathjax = function() {
+          if (window.MathJax) {
+          // MathJax loaded
+              MathJax.Hub.Config({
+                  TeX: {
+                      equationNumbers: {
+                      autoNumber: "AMS",
+                      useLabelIds: true
+                      }
+                  },
+                  tex2jax: {
+                      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                      processEscapes: true,
+                      processEnvironments: true
+                  },
+                  displayAlign: 'center',
+                  CommonHTML: {
+                      linebreaks: {
+                      automatic: true
+                      }
+                  }
+              });
+
+              MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+          }
+      }
+      init_mathjax();
+    </script>
+    <script type="module" defer>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const diagrams = document.querySelectorAll(".jp-Mermaid > pre.mermaid")
+        // do not load mermaidjs if not needed
+        if (!diagrams.length) {
+          return
+        }
+        const mermaid = (
+          await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.3.1/mermaid.esm.min.mjs")
+        ).default
+        const parser = new DOMParser()
+
+        mermaid.initialize({
+          maxTextSize: 100000,
+          startOnLoad: false,
+          fontFamily: window
+            .getComputedStyle(document.body)
+            .getPropertyValue("--jp-ui-font-family"),
+          theme: document.querySelector("body[data-jp-theme-light='true']") ? "default" : "dark",
+        })
+
+        let _nextMermaidId = 0
+
+        function makeMermaidImage(svg) {
+          const img = document.createElement("img")
+          const doc = parser.parseFromString(svg, "image/svg+xml")
+          const svgEl = doc.querySelector("svg")
+          const { maxWidth } = svgEl?.style || {}
+          const firstTitle = doc.querySelector("title")
+          const firstDesc = doc.querySelector("desc")
+
+          img.setAttribute("src", `data:image/svg+xml,${encodeURIComponent(svg)}`)
+          if (maxWidth) {
+            img.width = parseInt(maxWidth)
+          }
+          if (firstTitle) {
+            img.setAttribute("alt", firstTitle.textContent)
+          }
+          if (firstDesc) {
+            const caption = document.createElement("figcaption")
+            caption.className = "sr-only"
+            caption.textContent = firstDesc.textContent
+            return [img, caption]
+          }
+          return [img]
+        }
+
+        async function makeMermaidError(text) {
+          let errorMessage = ""
+          try {
+            await mermaid.parse(text)
+          } catch (err) {
+            errorMessage = `${err}`
+          }
+
+          const result = document.createElement("details")
+          result.className = "jp-RenderedMermaid-Details"
+          const summary = document.createElement("summary")
+          summary.className = "jp-RenderedMermaid-Summary"
+          const pre = document.createElement("pre")
+          const code = document.createElement("code")
+          code.innerText = text
+          pre.appendChild(code)
+          summary.appendChild(pre)
+          result.appendChild(summary)
+
+          const warning = document.createElement("pre")
+          warning.innerText = errorMessage
+          result.appendChild(warning)
+          return [result]
+        }
+
+        async function renderOneMarmaid(src) {
+          const id = `jp-mermaid-${_nextMermaidId++}`
+          const parent = src.parentNode
+          let raw = src.textContent.trim()
+          const el = document.createElement("div")
+          el.style.visibility = "hidden"
+          document.body.appendChild(el)
+          let results = null
+          let output = null
+          try {
+            const { svg } = await mermaid.render(id, raw, el)
+            results = makeMermaidImage(svg)
+            output = document.createElement("figure")
+            results.map(output.appendChild, output)
+          } catch (err) {
+            parent.classList.add("jp-mod-warning")
+            results = await makeMermaidError(raw)
+            output = results[0]
+          } finally {
+            el.remove()
+          }
+          parent.classList.add("jp-RenderedMermaid")
+          parent.appendChild(output)
+        }
+
+        void Promise.all([...diagrams].map(renderOneMarmaid))
+      })
+    </script>
+  </head>
+  <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
+    <main>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=88c36a90">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <details>
+                <summary style="display: list-item; font-size: 16px; color: blue">
+                  Jupyter Help
+                </summary>
+                <p>
+                  Having trouble testing your work? Double-check that you have followed the steps
+                  below to write, run, save, and test your code!
+                </p>
+                <p>
+                  <a href="https://static-assets.codecademy.com/Courses/ds-python/jupyter-help.gif"
+                    >Click here for a walkthrough GIF of the steps below</a
+                  >
+                </p>
+                <p>
+                  Run all initial cells to import libraries and datasets. Then follow these steps
+                  for each question:
+                </p>
+                <ol>
+                  <li>
+                    Add your solution to the cell with <code>## YOUR SOLUTION HERE ## </code>.
+                  </li>
+                  <li>
+                    Run the cell by selecting the <code>Run</code> button or the
+                    <code>Shift</code>+<code>Enter</code> keys.
+                  </li>
+                  <li>
+                    Save your work by selecting the <code>Save</code> button, the
+                    <code>command</code>+<code>s</code> keys (Mac), or <code>control</code>+<code
+                      >s</code
+                    >
+                    keys (Windows).
+                  </li>
+                  <li>
+                    Select the <code>Test Work</code> button at the bottom left to test your work.
+                  </li>
+                </ol>
+                <p>
+                  <img
+                    alt="Screenshot of the buttons at the top of a Jupyter Notebook. The Run and Save buttons are highlighted"
+                    src="https://static-assets.codecademy.com/Paths/ds-python/jupyter-buttons.png"
+                  />
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4c609b12">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>Setup</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_setup" id="cell-id=047d9dc9">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">vehicles</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;vehicles.csv&#39;</span><span class="p">)</span>
+<span class="n">vehicles</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>id</th>
+                        <th>model</th>
+                        <th>year</th>
+                        <th>transmission</th>
+                        <th>manufacturer</th>
+                        <th>vehicle_type</th>
+                        <th>fuel</th>
+                        <th>fuel_configuration</th>
+                        <th>best_mpge</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>12988</td>
+                        <td>amg e53 4matic+ (convertible)</td>
+                        <td>2022</td>
+                        <td>auto</td>
+                        <td>mercedes-benz</td>
+                        <td>sedan/wagon</td>
+                        <td>hybrid electric</td>
+                        <td>hybrid electric</td>
+                        <td>28.0</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>689</td>
+                        <td>avalanche ffv</td>
+                        <td>2007</td>
+                        <td>auto</td>
+                        <td>chevrolet</td>
+                        <td>pickup</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
+                        <td>21.0</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>950</td>
+                        <td>impala</td>
+                        <td>2010</td>
+                        <td>auto</td>
+                        <td>chevrolet</td>
+                        <td>sedan/wagon</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
+                        <td>29.0</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>250</td>
+                        <td>yukon xl ffv</td>
+                        <td>2004</td>
+                        <td>auto</td>
+                        <td>gmc</td>
+                        <td>suv</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
+                        <td>18.0</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>13089</td>
+                        <td>sf90 spyder</td>
+                        <td>2022</td>
+                        <td>auto</td>
+                        <td>ferrari</td>
+                        <td>sedan/wagon</td>
+                        <td>plug-in hybrid electric</td>
+                        <td>hybrid electric</td>
+                        <td>19.0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=079e0e0c">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <ol>
+                <li>
+                  The Paris agreement was a major climate change treaty enacted in
+                  <code>2016</code>. Combine the comparisons <code>year_gt2016</code> and
+                  <code>is_electric</code> to produce <code>True</code> for electric vehicles
+                  introduced after 2016. Assign the result to <code>combined</code>.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_cp1"
+        id="cell-id=b318baec"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">year_gt2016</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2016</span>
+<span class="n">is_electric</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;fuel&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;electric&#39;</span>
+<span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">combined</span> <span class="o">=</span> <span class="n">year_gt2016</span> <span class="o">&amp;</span> <span class="n">is_electric</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6a172e5e">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <ol start="2">
+                <li>
+                  Use <code>combined</code> to filter <code>vehicles</code> down to only those rows
+                  containing electric vehicles introduced after 2016. Assign the result to the
+                  variable <code>electric_and_after_2016</code>.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp2" id="cell-id=e73ed471">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">electric_and_after_2016</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="n">combined</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">electric_and_after_2016</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>id</th>
+                        <th>model</th>
+                        <th>year</th>
+                        <th>transmission</th>
+                        <th>manufacturer</th>
+                        <th>vehicle_type</th>
+                        <th>fuel</th>
+                        <th>fuel_configuration</th>
+                        <th>best_mpge</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>916</th>
+                        <td>11782</td>
+                        <td>model s rwd 75 kwh</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>tesla</td>
+                        <td>sedan/wagon</td>
+                        <td>electric</td>
+                        <td>dedicated</td>
+                        <td>100.0</td>
+                      </tr>
+                      <tr>
+                        <th>270</th>
+                        <td>11777</td>
+                        <td>model s awd - 60d</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>tesla</td>
+                        <td>sedan/wagon</td>
+                        <td>electric</td>
+                        <td>dedicated</td>
+                        <td>107.0</td>
+                      </tr>
+                      <tr>
+                        <th>832</th>
+                        <td>11636</td>
+                        <td>i3 bev</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>bmw</td>
+                        <td>sedan/wagon</td>
+                        <td>electric</td>
+                        <td>dedicated</td>
+                        <td>137.0</td>
+                      </tr>
+                      <tr>
+                        <th>829</th>
+                        <td>11771</td>
+                        <td>leaf</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>nissan</td>
+                        <td>sedan/wagon</td>
+                        <td>electric</td>
+                        <td>dedicated</td>
+                        <td>124.0</td>
+                      </tr>
+                      <tr>
+                        <th>302</th>
+                        <td>11775</td>
+                        <td>model x awd - p100d</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>tesla</td>
+                        <td>suv</td>
+                        <td>electric</td>
+                        <td>dedicated</td>
+                        <td>92.0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8d481799">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <ol start="3">
+                <li>
+                  Filter <code>vehicles</code> down to only those rows corresponding to
+                  <code>biodiesel (b20)</code> fuel vehicles with <code>best_mpge</code> greater
+                  than 40 (the average). Assign the result to the variable
+                  <code>efficient_biodiesel</code>. (Note: there may not be any!)
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp3" id="cell-id=4ddf801b">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">is_biodiesel</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;fuel&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;biodiesel (b20)&#39;</span>
+<span class="n">is_above_average</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;best_mpge&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">40</span>
+<span class="n">efficient_biodiesel</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="n">is_biodiesel</span> <span class="o">&amp;</span> <span class="n">is_above_average</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">efficient_biodiesel</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>id</th>
+                        <th>model</th>
+                        <th>year</th>
+                        <th>transmission</th>
+                        <th>manufacturer</th>
+                        <th>vehicle_type</th>
+                        <th>fuel</th>
+                        <th>fuel_configuration</th>
+                        <th>best_mpge</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>19</th>
+                        <td>12035</td>
+                        <td>cruze</td>
+                        <td>2019</td>
+                        <td>auto</td>
+                        <td>chevrolet</td>
+                        <td>sedan/wagon</td>
+                        <td>biodiesel (b20)</td>
+                        <td>dedicated</td>
+                        <td>48.0</td>
+                      </tr>
+                      <tr>
+                        <th>187</th>
+                        <td>11738</td>
+                        <td>xe</td>
+                        <td>2017</td>
+                        <td>auto</td>
+                        <td>jaguar</td>
+                        <td>sedan/wagon</td>
+                        <td>biodiesel (b20)</td>
+                        <td>dedicated</td>
+                        <td>42.0</td>
+                      </tr>
+                      <tr>
+                        <th>499</th>
+                        <td>12206</td>
+                        <td>xf</td>
+                        <td>2019</td>
+                        <td>auto</td>
+                        <td>jaguar</td>
+                        <td>sedan/wagon</td>
+                        <td>biodiesel (b20)</td>
+                        <td>dedicated</td>
+                        <td>42.0</td>
+                      </tr>
+                      <tr>
+                        <th>501</th>
+                        <td>11824</td>
+                        <td>xf</td>
+                        <td>2018</td>
+                        <td>auto</td>
+                        <td>jaguar</td>
+                        <td>sedan/wagon</td>
+                        <td>biodiesel (b20)</td>
+                        <td>dedicated</td>
+                        <td>42.0</td>
+                      </tr>
+                      <tr>
+                        <th>564</th>
+                        <td>12036</td>
+                        <td>cruze hatchback</td>
+                        <td>2019</td>
+                        <td>auto</td>
+                        <td>chevrolet</td>
+                        <td>sedan/wagon</td>
+                        <td>biodiesel (b20)</td>
+                        <td>dedicated</td>
+                        <td>45.0</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="text/javascript" src="/relay.js"></script>
+  </body>
+</html>
