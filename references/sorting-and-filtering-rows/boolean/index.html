@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <link rel="shortcut icon" href="/src/img/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="/src/styles/jp.css" />
-    <title>Selecting Rows</title>
+    <title>Boolean</title>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
       defer
@@ -171,7 +171,6 @@
                 <div class="highlight hl-ipython3">
                   <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="n">vehicles</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;vehicles.csv&#39;</span><span class="p">)</span>
-<span class="n">vehicles</span> <span class="o">=</span> <span class="n">vehicles</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;year&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">vehicles</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre>
                 </div>
@@ -220,64 +219,64 @@
                     </thead>
                     <tbody>
                       <tr>
-                        <th>1940</th>
-                        <td>13107</td>
-                        <td>taycan gts st</td>
-                        <td>2023</td>
-                        <td>auto</td>
-                        <td>porsche</td>
-                        <td>sedan/wagon</td>
-                        <td>electric</td>
-                        <td>dedicated</td>
-                        <td>80.0</td>
-                      </tr>
-                      <tr>
-                        <th>718</th>
-                        <td>13106</td>
-                        <td>taycan gts</td>
-                        <td>2023</td>
-                        <td>auto</td>
-                        <td>porsche</td>
-                        <td>sedan/wagon</td>
-                        <td>electric</td>
-                        <td>dedicated</td>
-                        <td>83.0</td>
-                      </tr>
-                      <tr>
-                        <th>1663</th>
-                        <td>12836</td>
-                        <td>range rover sport phev</td>
+                        <th>0</th>
+                        <td>12988</td>
+                        <td>amg e53 4matic+ (convertible)</td>
                         <td>2022</td>
                         <td>auto</td>
-                        <td>land rover</td>
-                        <td>suv</td>
-                        <td>plug-in hybrid electric</td>
+                        <td>mercedes-benz</td>
+                        <td>sedan/wagon</td>
                         <td>hybrid electric</td>
+                        <td>hybrid electric</td>
+                        <td>28.0</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>689</td>
+                        <td>avalanche ffv</td>
+                        <td>2007</td>
+                        <td>auto</td>
+                        <td>chevrolet</td>
+                        <td>pickup</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
                         <td>21.0</td>
                       </tr>
                       <tr>
-                        <th>1581</th>
-                        <td>12970</td>
-                        <td>r1s</td>
-                        <td>2022</td>
+                        <th>2</th>
+                        <td>950</td>
+                        <td>impala</td>
+                        <td>2010</td>
                         <td>auto</td>
-                        <td>rivian</td>
-                        <td>suv</td>
-                        <td>electric</td>
-                        <td>dedicated</td>
-                        <td>73.0</td>
+                        <td>chevrolet</td>
+                        <td>sedan/wagon</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
+                        <td>29.0</td>
                       </tr>
                       <tr>
-                        <th>1597</th>
-                        <td>13018</td>
-                        <td>model y rwd</td>
+                        <th>3</th>
+                        <td>250</td>
+                        <td>yukon xl ffv</td>
+                        <td>2004</td>
+                        <td>auto</td>
+                        <td>gmc</td>
+                        <td>suv</td>
+                        <td>ethanol (e85)</td>
+                        <td>flexible fuel</td>
+                        <td>18.0</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>13089</td>
+                        <td>sf90 spyder</td>
                         <td>2022</td>
                         <td>auto</td>
-                        <td>tesla</td>
-                        <td>suv</td>
-                        <td>electric</td>
-                        <td>dedicated</td>
-                        <td>140.0</td>
+                        <td>ferrari</td>
+                        <td>sedan/wagon</td>
+                        <td>plug-in hybrid electric</td>
+                        <td>hybrid electric</td>
+                        <td>19.0</td>
                       </tr>
                     </tbody>
                   </table>
@@ -298,9 +297,8 @@
             >
               <ol>
                 <li>
-                  Use <code>.loc</code> to select the first two rows (all 2023 models) and the
-                  <code>manufacturer</code> column. Assign the result to
-                  <code>manufacturers_2023</code>.
+                  Use Python to confirm that <code>28</code> is less than or equal to
+                  <code>40</code>.
                 </li>
               </ol>
             </div>
@@ -316,10 +314,7 @@
               <div class="cm-editor cm-s-jupyter">
                 <div class="highlight hl-ipython3">
                   <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
-<span class="n">manufacturers_2023</span> <span class="o">=</span> <span class="n">vehicles</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="mi">1940</span><span class="p">,</span><span class="mi">718</span><span class="p">],[</span><span class="s1">&#39;manufacturer&#39;</span><span class="p">]]</span>
-
-<span class="c1"># show output</span>
-<span class="n">manufacturers_2023</span>
+<span class="mi">28</span> <span class="o">&lt;=</span> <span class="mi">40</span>
 </pre>
                 </div>
               </div>
@@ -332,43 +327,11 @@
             <div class="jp-OutputArea-child jp-OutputArea-executeResult">
               <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
               <div
-                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
-                data-mime-type="text/html"
+                class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/plain"
                 tabindex="0"
               >
-                <div>
-                  <style scoped="">
-                    .dataframe tbody tr th:only-of-type {
-                      vertical-align: middle;
-                    }
-
-                    .dataframe tbody tr th {
-                      vertical-align: top;
-                    }
-
-                    .dataframe thead th {
-                      text-align: right;
-                    }
-                  </style>
-                  <table border="1" class="dataframe">
-                    <thead>
-                      <tr style="text-align: right">
-                        <th></th>
-                        <th>manufacturer</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th>1940</th>
-                        <td>porsche</td>
-                      </tr>
-                      <tr>
-                        <th>718</th>
-                        <td>porsche</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <pre>True</pre>
               </div>
             </div>
           </div>
@@ -385,8 +348,9 @@
             >
               <ol start="2">
                 <li>
-                  Use <code>.iloc</code> to select the first two rows (all 2023 models) and the
-                  <code>fuel</code> column. Assign the result to <code>fuels_2023</code>.
+                  Create a Boolean mask that is <code>True</code> whenever <code>best_mpge</code> is
+                  greater than or equal to <code>25</code>. Assign the Boolean mask to
+                  <code>gt25</code>.
                 </li>
               </ol>
             </div>
@@ -402,10 +366,10 @@
               <div class="cm-editor cm-s-jupyter">
                 <div class="highlight hl-ipython3">
                   <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
-<span class="n">fuels_2023</span> <span class="o">=</span> <span class="n">vehicles</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">6</span><span class="p">]]</span>
+<span class="n">gt25</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;best_mpge&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">25</span>
 
 <span class="c1"># show output</span>
-<span class="n">fuels_2023</span>
+<span class="n">gt25</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre>
                 </div>
               </div>
@@ -418,43 +382,80 @@
             <div class="jp-OutputArea-child jp-OutputArea-executeResult">
               <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
               <div
-                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
-                data-mime-type="text/html"
+                class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/plain"
                 tabindex="0"
               >
-                <div>
-                  <style scoped="">
-                    .dataframe tbody tr th:only-of-type {
-                      vertical-align: middle;
-                    }
+                <pre>
+0     True
+1    False
+2     True
+3    False
+4    False
+Name: best_mpge, dtype: bool</pre
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8d481799">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <ol start="3">
+                <li>
+                  Create a Boolean mask that is <code>True</code> whenever
+                  <code>vehicle_type</code> is <code>sedan/wagon</code>. Assign the Boolean mask to
+                  <code>is_sedanwagon</code>.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp3" id="cell-id=4ddf801b">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">is_sedanwagon</span> <span class="o">=</span> <span class="n">vehicles</span><span class="p">[</span><span class="s1">&#39;vehicle_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sedan/wagon&#39;</span>
 
-                    .dataframe tbody tr th {
-                      vertical-align: top;
-                    }
-
-                    .dataframe thead th {
-                      text-align: right;
-                    }
-                  </style>
-                  <table border="1" class="dataframe">
-                    <thead>
-                      <tr style="text-align: right">
-                        <th></th>
-                        <th>fuel</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th>1940</th>
-                        <td>electric</td>
-                      </tr>
-                      <tr>
-                        <th>718</th>
-                        <td>electric</td>
-                      </tr>
-                    </tbody>
-                  </table>
+<span class="c1"># show output</span>
+<span class="n">is_sedanwagon</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[4]:</div>
+              <div
+                class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/plain"
+                tabindex="0"
+              >
+                <pre>
+0     True
+1    False
+2     True
+3    False
+4     True
+Name: vehicle_type, dtype: bool</pre
+                >
               </div>
             </div>
           </div>
