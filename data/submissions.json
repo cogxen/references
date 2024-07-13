@@ -56,6 +56,11 @@
           "name": "Sorting & Filtering Rows",
           "url": "/references/sorting-and-filtering-rows/index.html",
           "isLecture": false
+        },
+        {
+          "name": "Analyze Electric Vehicle Stations",
+          "url": "/references/sorting-and-filtering-rows/analyze-electric-vehicle-stations/index.html",
+          "isLecture": false
         }
       ]
     }
