@@ -1,44 +1,63 @@
 {
   "submissions": [
     {
-      "name": "Row Indexes",
-      "url": "/references/sorting-and-filtering-rows/row-indexes/index.html"
+      "section": "Exporling Data",
+      "items": []
     },
     {
-      "name": "Sorting Rows",
-      "url": "/references/sorting-and-filtering-rows/sorting-rows/index.html"
-    },
-    {
-      "name": "Selecting Rows",
-      "url": "/references/sorting-and-filtering-rows/selecting-rows/index.html"
-    },
-    {
-      "name": "Selecting Ranges of Rows",
-      "url": "/references/sorting-and-filtering-rows/selecting-ranges-of-rows/index.html"
-    },
-    {
-      "name": "Boolean",
-      "url": "/references/sorting-and-filtering-rows/boolean/index.html"
-    },
-    {
-      "name": "Filtering Rows with Boolean",
-      "url": "/references/sorting-and-filtering-rows/filtering-rows-with-boolean/index.html"
-    },
-    {
-      "name": "Booleans with AND",
-      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-and/index.html"
-    },
-    {
-      "name": "Booleans with OR",
-      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-or/index.html"
-    },
-    {
-      "name": "Booleans with NOT",
-      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-not/index.html"
-    },
-    {
-      "name": "Sorting & Filtering Rows Activity",
-      "url": "/references/sorting-and-filtering-rows/index.html"
+      "section": "Sorting and Filter Rows",
+      "items": [
+        {
+          "name": "Row Indexes",
+          "url": "/references/sorting-and-filtering-rows/row-indexes/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Sorting Rows",
+          "url": "/references/sorting-and-filtering-rows/sorting-rows/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Selecting Rows",
+          "url": "/references/sorting-and-filtering-rows/selecting-rows/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Selecting Ranges of Rows",
+          "url": "/references/sorting-and-filtering-rows/selecting-ranges-of-rows/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Boolean",
+          "url": "/references/sorting-and-filtering-rows/boolean/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Filtering Rows with Boolean",
+          "url": "/references/sorting-and-filtering-rows/filtering-rows-with-boolean/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Booleans with AND",
+          "url": "/references/sorting-and-filtering-rows/operators/booleans-with-and/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Booleans with OR",
+          "url": "/references/sorting-and-filtering-rows/operators/booleans-with-or/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Booleans with NOT",
+          "url": "/references/sorting-and-filtering-rows/operators/booleans-with-not/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Sorting & Filtering Rows",
+          "url": "/references/sorting-and-filtering-rows/index.html",
+          "isLecture": false
+        }
+      ]
     }
   ]
 }
