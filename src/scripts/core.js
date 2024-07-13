@@ -1,25 +1,39 @@
-async function generateSubmissions() {
-  const response = await fetch('data/submissions.json');
-  const submissionsData = await response.json();
+async function loadSubmissions() {
+  const response = await fetch("/data/submissions.json")
+  const data = await response.json()
 
-  const submissionsSection = document.querySelector('.w-full.flex.flex-col.items-center.gap-2.py-8');
+  const mainSection = document.querySelector("main")
 
-  submissionsSection.innerHTML = '';
+  data.submissions.forEach((submission) => {
+    const section = document.createElement("section")
+    section.className = "w-full flex flex-col items-start gap-2 py-4"
 
-  submissionsData.submissions.forEach(submission => {
-    const submissionLink = document.createElement('a');
-    submissionLink.href = submission.url;
-    submissionLink.target = '_blank';
-    submissionLink.className = 'max-w-xl w-full p-4 border border-dashed border-slate-400';
+    const span = document.createElement("span")
+    span.className = "text-lg w-full text-center"
+    span.textContent = submission.section
+    section.appendChild(span)
 
-    const submissionName = document.createElement('span');
-    submissionName.className = 'text-base text-slate-600';
-    submissionName.textContent = submission.name;
+    const divContainer = document.createElement("div")
+    divContainer.className = "w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2"
 
-    submissionLink.appendChild(submissionName);
+    submission.items.forEach((item) => {
+      const anchor = document.createElement("a")
+      anchor.href = item.url
+      anchor.target = "_blank"
+      anchor.className = `max-w-xl w-full p-2 text-base font-bold text-slate-600 ${
+        item.isLecture ? "bg-amber-100 hover:bg-amber-300" : "bg-indigo-100 hover:bg-indigo-300"
+      } flex flex-col justify-between`
 
-    submissionsSection.appendChild(submissionLink);
-  });
+      const itemDiv = document.createElement("div")
+      itemDiv.textContent = item.name
+
+      anchor.appendChild(itemDiv)
+      divContainer.appendChild(anchor)
+    })
+
+    section.appendChild(divContainer)
+    mainSection.appendChild(section)
+  })
 }
 
-generateSubmissions();
+document.addEventListener("DOMContentLoaded", loadSubmissions)
