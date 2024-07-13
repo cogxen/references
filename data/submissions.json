@@ -23,6 +23,22 @@
     {
       "name": "Filtering Rows with Boolean",
       "url": "/references/sorting-and-filtering-rows/filtering-rows-with-boolean/index.html"
+    },
+    {
+      "name": "Booleans with AND",
+      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-and/index.html"
+    },
+    {
+      "name": "Booleans with OR",
+      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-or/index.html"
+    },
+    {
+      "name": "Booleans with NOT",
+      "url": "/references/sorting-and-filtering-rows/operators/booleans-with-not/index.html"
+    },
+    {
+      "name": "Sorting & Filtering Rows Activity",
+      "url": "/references/sorting-and-filtering-rows/index.html"
     }
   ]
 }
