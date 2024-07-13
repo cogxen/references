@@ -1,8 +1,59 @@
 {
   "submissions": [
     {
-      "section": "Exporling Data",
-      "items": []
+      "section": "Exploring Data",
+      "items": [
+        {
+          "name": "Importing Datasets",
+          "url": "/references/exploring-data/importing-datasets/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Data Types",
+          "url": "/references/exploring-data/data-types/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Variables",
+          "url": "/references/exploring-data/variables/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Lists",
+          "url": "/references/exploring-data/lists/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Dictionaries",
+          "url": "/references/exploring-data/dictionaries/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Methods",
+          "url": "/references/exploring-data/methods/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Categorical Data",
+          "url": "/references/exploring-data/categorical-data/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Numeric Data",
+          "url": "/references/exploring-data/numeric-data/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Exploring Data",
+          "url": "/references/exploring-data/index.html",
+          "isLecture": false
+        },
+        {
+          "name": "Exploring Laptop Repair Data",
+          "url": "/references/exploring-data/exploring-laptop-repair-data/index.html",
+          "isLecture": false
+        }
+      ]
     },
     {
       "section": "Sorting and Filter Rows",
