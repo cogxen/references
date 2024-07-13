@@ -20,8 +20,10 @@ async function loadSubmissions() {
       const anchor = document.createElement("a")
       anchor.href = item.url
       anchor.target = "_blank"
-      anchor.className = `max-w-xl w-full p-2 text-base font-bold text-slate-600 ${
-        item.isLecture ? "bg-amber-100 hover:bg-amber-300" : "bg-indigo-100 hover:bg-indigo-300"
+      anchor.className = `max-w-xl w-full border-4 px-4 py-2 text-base font-bold text-slate-600 ${
+        item.isLecture
+          ? "bg-slate-100 border-slate-600 hover:bg-slate-300"
+          : "bg-emerald-100 border-emerald-600 hover:bg-emerald-300"
       } flex flex-col justify-between`
 
       const itemDiv = document.createElement("div")
