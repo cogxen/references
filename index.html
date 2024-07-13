@@ -1,21 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Submissions</title>
-  <link rel="shortcut icon" href="src/img/favicon.ico" type="image/x-icon">
-  <link href="src/styles/output.css" rel="stylesheet">
-</head>
-<body>
-  <main class="w-screen h-screen p-8 font-mono">
-    <section class="flex justify-center text-3xl">Submissions</section>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Submissions</title>
+    <link rel="shortcut icon" href="src/img/favicon.ico" type="image/x-icon" />
+    <link href="src/styles/output.css" rel="stylesheet" />
+  </head>
+  <body>
+    <main class="w-screen h-screen p-8 font-mono">
+      <section class="flex justify-center text-3xl">Submissions</section>
 
-    <section class="w-full flex flex-col items-center gap-2 py-8" id="submissions-section">
-    </section>
-    
-  </main>
+      <div class="flex flex-row items-center gap-4 justify-center">
+        <div class="flex flex-row items-center gap-2">
+          <div class="flex flex-row items-center gap-1">
+            <span class="text-sm">References</span>
+            <span class="relative flex h-3 w-3">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-200 opacity-75"
+              ></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-300"></span>
+            </span>
+          </div>
+          <div class="flex flex-row items-center gap-1">
+            <span class="text-sm">Activities</span>
+            <span class="relative flex h-3 w-3">
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-200 opacity-75"
+              ></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-300"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </main>
 
-  <script src="src/scripts/core.js" type="module"></script>
-</body>
+    <script src="src/scripts/core.js" type="module"></script>
+  </body>
 </html>
