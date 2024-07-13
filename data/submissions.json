@@ -15,6 +15,14 @@
     {
       "name": "Selecting Ranges of Rows",
       "url": "/references/sorting-and-filtering-rows/selecting-ranges-of-rows/index.html"
+    },
+    {
+      "name": "Boolean",
+      "url": "/references/sorting-and-filtering-rows/boolean/index.html"
+    },
+    {
+      "name": "Filtering Rows with Boolean",
+      "url": "/references/sorting-and-filtering-rows/filtering-rows-with-boolean/index.html"
     }
   ]
 }
