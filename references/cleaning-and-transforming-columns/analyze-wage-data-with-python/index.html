@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="shortcut icon" href="/src/img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/src/styles/jp.css" />
+    <title>Activity | Analyze Wage Data with Python</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
+      defer
+    ></script>
+    <script type="text/x-mathjax-config" defer>
+      init_mathjax = function() {
+          if (window.MathJax) {
+          // MathJax loaded
+              MathJax.Hub.Config({
+                  TeX: {
+                      equationNumbers: {
+                      autoNumber: "AMS",
+                      useLabelIds: true
+                      }
+                  },
+                  tex2jax: {
+                      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                      processEscapes: true,
+                      processEnvironments: true
+                  },
+                  displayAlign: 'center',
+                  CommonHTML: {
+                      linebreaks: {
+                      automatic: true
+                      }
+                  }
+              });
+
+              MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+          }
+      }
+      init_mathjax();
+    </script>
+    <script type="module" defer>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const diagrams = document.querySelectorAll(".jp-Mermaid > pre.mermaid")
+        // do not load mermaidjs if not needed
+        if (!diagrams.length) {
+          return
+        }
+        const mermaid = (
+          await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.3.1/mermaid.esm.min.mjs")
+        ).default
+        const parser = new DOMParser()
+
+        mermaid.initialize({
+          maxTextSize: 100000,
+          startOnLoad: false,
+          fontFamily: window
+            .getComputedStyle(document.body)
+            .getPropertyValue("--jp-ui-font-family"),
+          theme: document.querySelector("body[data-jp-theme-light='true']") ? "default" : "dark",
+        })
+
+        let _nextMermaidId = 0
+
+        function makeMermaidImage(svg) {
+          const img = document.createElement("img")
+          const doc = parser.parseFromString(svg, "image/svg+xml")
+          const svgEl = doc.querySelector("svg")
+          const { maxWidth } = svgEl?.style || {}
+          const firstTitle = doc.querySelector("title")
+          const firstDesc = doc.querySelector("desc")
+
+          img.setAttribute("src", `data:image/svg+xml,${encodeURIComponent(svg)}`)
+          if (maxWidth) {
+            img.width = parseInt(maxWidth)
+          }
+          if (firstTitle) {
+            img.setAttribute("alt", firstTitle.textContent)
+          }
+          if (firstDesc) {
+            const caption = document.createElement("figcaption")
+            caption.className = "sr-only"
+            caption.textContent = firstDesc.textContent
+            return [img, caption]
+          }
+          return [img]
+        }
+
+        async function makeMermaidError(text) {
+          let errorMessage = ""
+          try {
+            await mermaid.parse(text)
+          } catch (err) {
+            errorMessage = `${err}`
+          }
+
+          const result = document.createElement("details")
+          result.className = "jp-RenderedMermaid-Details"
+          const summary = document.createElement("summary")
+          summary.className = "jp-RenderedMermaid-Summary"
+          const pre = document.createElement("pre")
+          const code = document.createElement("code")
+          code.innerText = text
+          pre.appendChild(code)
+          summary.appendChild(pre)
+          result.appendChild(summary)
+
+          const warning = document.createElement("pre")
+          warning.innerText = errorMessage
+          result.appendChild(warning)
+          return [result]
+        }
+
+        async function renderOneMarmaid(src) {
+          const id = `jp-mermaid-${_nextMermaidId++}`
+          const parent = src.parentNode
+          let raw = src.textContent.trim()
+          const el = document.createElement("div")
+          el.style.visibility = "hidden"
+          document.body.appendChild(el)
+          let results = null
+          let output = null
+          try {
+            const { svg } = await mermaid.render(id, raw, el)
+            results = makeMermaidImage(svg)
+            output = document.createElement("figure")
+            results.map(output.appendChild, output)
+          } catch (err) {
+            parent.classList.add("jp-mod-warning")
+            results = await makeMermaidError(raw)
+            output = results[0]
+          } finally {
+            el.remove()
+          }
+          parent.classList.add("jp-RenderedMermaid")
+          parent.appendChild(output)
+        }
+
+        void Promise.all([...diagrams].map(renderOneMarmaid))
+      })
+    </script>
+  </head>
+  <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
+    <main>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=64ea4107-c24c-42d5-8e12-1309ff801e9b"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h1 id="Analyze-Wage-Data-with-Python">
+                Analyze Wage Data with Python<a
+                  class="anchor-link"
+                  href="#Analyze-Wage-Data-with-Python"
+                  >¶</a
+                >
+              </h1>
+              <ul>
+                <li><a href="./solutions.html">View Solution Notebook</a></li>
+                <li>
+                  <a
+                    href="https://www.codecademy.com/projects/practice/analyze-wage-data-with-python"
+                    >View Project Page</a
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=fb1954dd-07f0-4544-aa1f-ba0e16c01314"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h2 id="Task-Group-1---Import-and-Clean">
+                Task Group 1 - Import and Clean<a
+                  class="anchor-link"
+                  href="#Task-Group-1---Import-and-Clean"
+                  >¶</a
+                >
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=7ca74136-3d4d-476a-a22d-4a954c133ea4"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-1">Task 1<a class="anchor-link" href="#Task-1">¶</a></h3>
+              <p>Display the first five lines of <code>df_wages</code>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=b6d195a1-20e3-4e00-a95c-d830219cd667"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="n">df_wages</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;wages.csv&#39;</span><span class="p">)</span>
+
+<span class="c1"># Preview the data</span>
+<span class="n">df_wages</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Index</th>
+                        <th>
+                          Occupation title (click on the occupation title to view its profile)
+                        </th>
+                        <th>Year</th>
+                        <th>Employment</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Similar occupation average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>0</td>
+                        <td>Management Occupations - Top Executives - Chie...</td>
+                        <td>2021</td>
+                        <td>200480</td>
+                        <td>$102.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>1</td>
+                        <td>Management Occupations - Top Executives - Gene...</td>
+                        <td>2021</td>
+                        <td>2984920</td>
+                        <td>$55.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>2</td>
+                        <td>Management Occupations - Top Executives - Legi...</td>
+                        <td>2021</td>
+                        <td>44590</td>
+                        <td>NaN</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>3</td>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>2021</td>
+                        <td>22520</td>
+                        <td>$68.68</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>4</td>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>2021</td>
+                        <td>278690</td>
+                        <td>$73.77</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d2381b76">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-2">Task 2<a class="anchor-link" href="#Task-2">¶</a></h3>
+              <p>
+                Rename the
+                <code>Occupation title (click on the occupation title to view its profile)</code>
+                column to <code>Occupation title</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7e69e90c">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">col_mapper</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Occupation title (click on the occupation title to view its profile)&#39;</span><span class="p">:</span><span class="s1">&#39;Occupation title&#39;</span><span class="p">}</span>
+<span class="n">df_wages</span> <span class="o">=</span> <span class="n">df_wages</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">mapper</span> <span class="o">=</span> <span class="n">col_mapper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Index</th>
+                        <th>Occupation title</th>
+                        <th>Year</th>
+                        <th>Employment</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Similar occupation average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>0</td>
+                        <td>Management Occupations - Top Executives - Chie...</td>
+                        <td>2021</td>
+                        <td>200480</td>
+                        <td>$102.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>1</td>
+                        <td>Management Occupations - Top Executives - Gene...</td>
+                        <td>2021</td>
+                        <td>2984920</td>
+                        <td>$55.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>2</td>
+                        <td>Management Occupations - Top Executives - Legi...</td>
+                        <td>2021</td>
+                        <td>44590</td>
+                        <td>NaN</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>3</td>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>2021</td>
+                        <td>22520</td>
+                        <td>$68.68</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>4</td>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>2021</td>
+                        <td>278690</td>
+                        <td>$73.77</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=2c8730dd-8a8a-4423-b423-e3feba6b93ba"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-3">Task 3<a class="anchor-link" href="#Task-3">¶</a></h3>
+              <p>
+                Drop any redundant or otherwise unnecessary columns from <code>df_wages</code>. Make
+                a note of why these columns are suitable for dropping!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=c0339a3b-f94b-4555-9be3-cdd5217da812"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">drop_column_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Index&#39;</span><span class="p">,</span> <span class="s1">&#39;Year&#39;</span><span class="p">]</span>
+<span class="n">df_wages</span> <span class="o">=</span> <span class="n">df_wages</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">labels</span><span class="o">=</span><span class="n">drop_column_labels</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Occupation title</th>
+                        <th>Employment</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Similar occupation average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>Management Occupations - Top Executives - Chie...</td>
+                        <td>200480</td>
+                        <td>$102.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>Management Occupations - Top Executives - Gene...</td>
+                        <td>2984920</td>
+                        <td>$55.41</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>Management Occupations - Top Executives - Legi...</td>
+                        <td>44590</td>
+                        <td>NaN</td>
+                        <td>$59.31</td>
+                        <td>$57.94</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>22520</td>
+                        <td>$68.68</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>278690</td>
+                        <td>$73.77</td>
+                        <td>$59.31</td>
+                        <td>$69.77</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=474b5d05-8a27-495f-9bf8-1ea7561b72ae"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-4">Task 4<a class="anchor-link" href="#Task-4">¶</a></h3>
+              <p>Display column information including names, # non-null entries, and data types.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=2bbb3f80-28f1-4e30-8f23-d0859ce5ce0c"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+              <div
+                class="jp-RenderedText jp-OutputArea-output"
+                data-mime-type="text/plain"
+                tabindex="0"
+              >
+                <pre>
+&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 824 entries, 0 to 823
+Data columns (total 5 columns):
+ #   Column                      Non-Null Count  Dtype 
+---  ------                      --------------  ----- 
+ 0   Occupation title            824 non-null    object
+ 1   Employment                  824 non-null    int64 
+ 2   Average hourly wage         764 non-null    object
+ 3   Industry average            824 non-null    object
+ 4   Similar occupation average  765 non-null    object
+dtypes: int64(1), object(4)
+memory usage: 32.3+ KB
+</pre
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=47795a24-1d0b-410e-9334-48d49bc82c85"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h2 id="Task-Group-2---Column-Transformations">
+                Task Group 2 - Column Transformations<a
+                  class="anchor-link"
+                  href="#Task-Group-2---Column-Transformations"
+                  >¶</a
+                >
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=54a3e724-5bfe-4ff4-8dc9-ae1b42c68e0c"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-5">Task 5<a class="anchor-link" href="#Task-5">¶</a></h3>
+              <p>
+                Use pandas to split the information in the <code>Occupation title</code> column into
+                new columns <code>Industry</code>, <code>Level</code>, and <code>Occupation</code>.
+                But first, show the first 5 rows of the <code>title_split</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=b15c14fa-f76d-480a-985c-9f89928a0efe"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">title_split</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Occupation title&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">title_split</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>0</th>
+                        <th>1</th>
+                        <th>2</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>Chief Executives</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>General and Operations Managers</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>Legislators</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>Management Occupations</td>
+                        <td>Advertising, Marketing, Promotions, Public Re...</td>
+                        <td>Advertising and Promotions Managers</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>Management Occupations</td>
+                        <td>Advertising, Marketing, Promotions, Public Re...</td>
+                        <td>Marketing Managers</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=068d8a6c">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>Now, show the new columns.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=388fe629">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_split</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_split</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title_split</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="p">[[</span><span class="s1">&#39;Occupation title&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry&#39;</span><span class="p">,</span> <span class="s1">&#39;Level&#39;</span><span class="p">,</span> <span class="s1">&#39;Occupation&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Occupation title</th>
+                        <th>Industry</th>
+                        <th>Level</th>
+                        <th>Occupation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>Management Occupations - Top Executives - Chie...</td>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>Chief Executives</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>Management Occupations - Top Executives - Gene...</td>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>General and Operations Managers</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>Management Occupations - Top Executives - Legi...</td>
+                        <td>Management Occupations</td>
+                        <td>Top Executives</td>
+                        <td>Legislators</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>Management Occupations</td>
+                        <td>Advertising, Marketing, Promotions, Public Re...</td>
+                        <td>Advertising and Promotions Managers</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>Management Occupations - Advertising, Marketin...</td>
+                        <td>Management Occupations</td>
+                        <td>Advertising, Marketing, Promotions, Public Re...</td>
+                        <td>Marketing Managers</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=a226e990-7175-419e-985c-aa567cc32640"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-6">Task 6<a class="anchor-link" href="#Task-6">¶</a></h3>
+              <p>
+                Remove any leading and trailing whitespaces in the columns <code>Industry</code>,
+                <code>Level</code>, and <code>Occupation</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs"
+        id="cell-id=5bd896cf-571e-47c3-8816-81a492131e9b"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Level&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Level&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=ab6f4e3d-ffb1-4523-b154-6b25f43b74f2"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-7">Task 7<a class="anchor-link" href="#Task-7">¶</a></h3>
+              <p>
+                Replace the <code>&#39;$&#39;</code> character in the columns
+                <code>Average hourly wage</code>, <code>Industry average</code>, and
+                <code>Similar occupation average</code> with an empty character
+                <code>&#39;&#39;</code> (no space between the single quotes!).
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=c7f763cb-1178-4a35-a10d-9c99cc48732a"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Similar occupation average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Similar occupation average&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="p">[[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry average&#39;</span><span class="p">,</span> <span class="s1">&#39;Similar occupation average&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Similar occupation average</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>102.41</td>
+                        <td>59.31</td>
+                        <td>57.94</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>55.41</td>
+                        <td>59.31</td>
+                        <td>57.94</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>NaN</td>
+                        <td>59.31</td>
+                        <td>57.94</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>68.68</td>
+                        <td>59.31</td>
+                        <td>69.77</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>73.77</td>
+                        <td>59.31</td>
+                        <td>69.77</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=b8daf619-5ddf-40bc-8382-2622f90d6248"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-8">Task 8<a class="anchor-link" href="#Task-8">¶</a></h3>
+              <p>
+                Convert the data types of the columns <code>Average hourly wage</code>,
+                <code>Industry average</code>, and <code>Similar occupation average</code> from
+                <code>object</code> to <code>float</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=5a9f50f6-307c-4608-a37e-f4d96bab3ac9"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">]</span>  <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Similar occupation average&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Similar occupation average&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+              <div
+                class="jp-RenderedText jp-OutputArea-output"
+                data-mime-type="text/plain"
+                tabindex="0"
+              >
+                <pre>
+&lt;class &#39;pandas.core.frame.DataFrame&#39;&gt;
+RangeIndex: 824 entries, 0 to 823
+Data columns (total 8 columns):
+ #   Column                      Non-Null Count  Dtype  
+---  ------                      --------------  -----  
+ 0   Occupation title            824 non-null    object 
+ 1   Employment                  824 non-null    int64  
+ 2   Average hourly wage         764 non-null    float64
+ 3   Industry average            824 non-null    float64
+ 4   Similar occupation average  765 non-null    float64
+ 5   Industry                    824 non-null    object 
+ 6   Level                       824 non-null    object 
+ 7   Occupation                  824 non-null    object 
+dtypes: float64(3), int64(1), object(4)
+memory usage: 51.6+ KB
+</pre
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=058ea3f7-22eb-468a-92b7-1455bcafa6c7"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h2 id="Task-Group-3---Comparison-to-Industry-Average">
+                Task Group 3 - Comparison to Industry Average<a
+                  class="anchor-link"
+                  href="#Task-Group-3---Comparison-to-Industry-Average"
+                  >¶</a
+                >
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=599e642d-2839-4da4-829c-b1ba90beddb3"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-9">Task 9<a class="anchor-link" href="#Task-9">¶</a></h3>
+              <p>
+                Calculate the difference between the average hourly wage and the industry average.
+                Assign the difference to a new column <code>Industry wage difference</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=da784ebf-0cb3-4727-8da2-366853edaa4a"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry wage difference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="p">[[</span><span class="s1">&#39;Occupation&#39;</span><span class="p">,</span> <span class="s1">&#39;Average hourly wage&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry average&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry wage difference&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Occupation</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Industry wage difference</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>Chief Executives</td>
+                        <td>102.41</td>
+                        <td>59.31</td>
+                        <td>43.10</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>General and Operations Managers</td>
+                        <td>55.41</td>
+                        <td>59.31</td>
+                        <td>-3.90</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>Legislators</td>
+                        <td>NaN</td>
+                        <td>59.31</td>
+                        <td>NaN</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>Advertising and Promotions Managers</td>
+                        <td>68.68</td>
+                        <td>59.31</td>
+                        <td>9.37</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>Marketing Managers</td>
+                        <td>73.77</td>
+                        <td>59.31</td>
+                        <td>14.46</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=01d38192-1875-46eb-9977-e579b5701e2d"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-10">Task 10<a class="anchor-link" href="#Task-10">¶</a></h3>
+              <p>
+                Divide <code>Industry wage difference</code> by <code>Industry average</code> to
+                convert the difference to a percent change. (You might want to multiply by
+                <code>100</code> at the end to display as a percentage).
+              </p>
+              <p>Assign the result to new column called <code>Industry wage pctchg</code>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=0d8f4aa0-df76-4bfd-a5ce-13e4c899eec3"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry wage pctchg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry wage difference&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry average&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span>
+
+<span class="c1"># show output</span>
+<span class="n">df_wages</span><span class="p">[[</span><span class="s1">&#39;Industry&#39;</span><span class="p">,</span> <span class="s1">&#39;Occupation&#39;</span><span class="p">,</span><span class="s1">&#39;Level&#39;</span><span class="p">,</span> <span class="s1">&#39;Average hourly wage&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry average&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry wage pctchg&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Industry</th>
+                        <th>Occupation</th>
+                        <th>Level</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Industry wage pctchg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>Management Occupations</td>
+                        <td>Chief Executives</td>
+                        <td>Top Executives</td>
+                        <td>102.41</td>
+                        <td>59.31</td>
+                        <td>72.669027</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>Management Occupations</td>
+                        <td>General and Operations Managers</td>
+                        <td>Top Executives</td>
+                        <td>55.41</td>
+                        <td>59.31</td>
+                        <td>-6.575620</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>Management Occupations</td>
+                        <td>Legislators</td>
+                        <td>Top Executives</td>
+                        <td>NaN</td>
+                        <td>59.31</td>
+                        <td>NaN</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>Management Occupations</td>
+                        <td>Advertising and Promotions Managers</td>
+                        <td>Advertising, Marketing, Promotions, Public Rel...</td>
+                        <td>68.68</td>
+                        <td>59.31</td>
+                        <td>15.798348</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>Management Occupations</td>
+                        <td>Marketing Managers</td>
+                        <td>Advertising, Marketing, Promotions, Public Rel...</td>
+                        <td>73.77</td>
+                        <td>59.31</td>
+                        <td>24.380374</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-MarkdownCell jp-Notebook-cell"
+        id="cell-id=0a973d2a-2a57-440d-b4da-5ad3e303b277"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-11">Task 11<a class="anchor-link" href="#Task-11">¶</a></h3>
+              <p>
+                Sort <code>df_wages</code> by the <code>Industry wage pctchg</code> column from
+                <em>highest</em> to <em>lowest</em>. Assign the result to the variable
+                <code>highest_industry_pctchg</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="jp-Cell jp-CodeCell jp-Notebook-cell"
+        id="cell-id=bac8e251-425b-41e8-999a-7b6b9939c4b6"
+      >
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">highest_industry_pctchg</span> <span class="o">=</span> <span class="n">df_wages</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;Industry wage pctchg&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">highest_industry_pctchg</span><span class="p">[[</span><span class="s1">&#39;Industry&#39;</span><span class="p">,</span> <span class="s1">&#39;Occupation&#39;</span><span class="p">,</span><span class="s1">&#39;Level&#39;</span><span class="p">,</span> <span class="s1">&#39;Industry wage pctchg&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Industry</th>
+                        <th>Occupation</th>
+                        <th>Level</th>
+                        <th>Industry wage pctchg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>329</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Cardiologists</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>288.538813</td>
+                      </tr>
+                      <tr>
+                        <th>460</th>
+                        <td>Personal Care and Service Occupations</td>
+                        <td>Makeup Artists, Theatrical and Performance</td>
+                        <td>Personal Appearance Workers</td>
+                        <td>269.820656</td>
+                      </tr>
+                      <tr>
+                        <th>328</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Anesthesiologists</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>263.515982</td>
+                      </tr>
+                      <tr>
+                        <th>305</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Oral and Maxillofacial Surgeons</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>241.872146</td>
+                      </tr>
+                      <tr>
+                        <th>331</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Emergency Medicine Physicians</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>240.981735</td>
+                      </tr>
+                      <tr>
+                        <th>342</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Orthopedic Surgeons, Except Pediatric</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>236.118721</td>
+                      </tr>
+                      <tr>
+                        <th>330</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Dermatologists</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>232.305936</td>
+                      </tr>
+                      <tr>
+                        <th>339</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Radiologists</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>231.187215</td>
+                      </tr>
+                      <tr>
+                        <th>344</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Surgeons, All Other</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>226.872146</td>
+                      </tr>
+                      <tr>
+                        <th>335</th>
+                        <td>Healthcare Practitioners and Technical Occupat...</td>
+                        <td>Obstetricians and Gynecologists</td>
+                        <td>Healthcare Diagnosing or Treating Practitioners</td>
+                        <td>225.136986</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1eea528e">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h2 id="Task-Group-4---Computer-Jobs">
+                Task Group 4 - Computer Jobs<a
+                  class="anchor-link"
+                  href="#Task-Group-4---Computer-Jobs"
+                  >¶</a
+                >
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=196cb84e">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-12">Task 12<a class="anchor-link" href="#Task-12">¶</a></h3>
+              <p>
+                Use the separate <code>Industry</code> column you created in Task 5 to investigate
+                occupations in the
+                <strong>&#39;Computer and Mathematical Occupations&#39;</strong> industry. Filter
+                <code>df_wages</code> for this specific industry and create a new DataFrame named
+                <code>cs_math_occupations</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=b8dde112">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">cs_math_occupations</span> <span class="o">=</span> <span class="n">df_wages</span><span class="p">[</span><span class="n">df_wages</span><span class="p">[</span><span class="s1">&#39;Industry&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Computer and Mathematical Occupations&#39;</span><span class="p">]</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=643af850">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h3 id="Task-13">Task 13<a class="anchor-link" href="#Task-13">¶</a></h3>
+              <p>
+                Sort <code>cs_math_occupations</code> by <code>Average hourly wage</code> from
+                highest to lowest, and display the ten (10) results.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=7556b554">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">cs_math_occupations_sorted</span> <span class="o">=</span> <span class="n">cs_math_occupations</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;Average hourly wage&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># show output</span>
+<span class="n">cs_math_occupations_sorted</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>Occupation title</th>
+                        <th>Employment</th>
+                        <th>Average hourly wage</th>
+                        <th>Industry average</th>
+                        <th>Similar occupation average</th>
+                        <th>Industry</th>
+                        <th>Level</th>
+                        <th>Occupation</th>
+                        <th>Industry wage difference</th>
+                        <th>Industry wage pctchg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>70</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>30840</td>
+                        <td>68.58</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Computer and Information Research Scientists</td>
+                        <td>20.57</td>
+                        <td>42.845241</td>
+                      </tr>
+                      <tr>
+                        <th>83</th>
+                        <td>Computer and Mathematical Occupations - Mathem...</td>
+                        <td>23040</td>
+                        <td>60.24</td>
+                        <td>48.01</td>
+                        <td>49.90</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Mathematical Science Occupations</td>
+                        <td>Actuaries</td>
+                        <td>12.23</td>
+                        <td>25.473860</td>
+                      </tr>
+                      <tr>
+                        <th>75</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>50440</td>
+                        <td>58.58</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Database Architects</td>
+                        <td>10.57</td>
+                        <td>22.016247</td>
+                      </tr>
+                      <tr>
+                        <th>78</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>1364180</td>
+                        <td>58.17</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Software Developers</td>
+                        <td>10.16</td>
+                        <td>21.162258</td>
+                      </tr>
+                      <tr>
+                        <th>73</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>168830</td>
+                        <td>58.01</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Computer Network Architects</td>
+                        <td>10.00</td>
+                        <td>20.828994</td>
+                      </tr>
+                      <tr>
+                        <th>69</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>157220</td>
+                        <td>54.46</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Information Security Analysts</td>
+                        <td>6.45</td>
+                        <td>13.434701</td>
+                      </tr>
+                      <tr>
+                        <th>84</th>
+                        <td>Computer and Mathematical Occupations - Mathem...</td>
+                        <td>1770</td>
+                        <td>54.05</td>
+                        <td>48.01</td>
+                        <td>49.90</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Mathematical Science Occupations</td>
+                        <td>Mathematicians</td>
+                        <td>6.04</td>
+                        <td>12.580712</td>
+                      </tr>
+                      <tr>
+                        <th>87</th>
+                        <td>Computer and Mathematical Occupations - Mathem...</td>
+                        <td>105980</td>
+                        <td>52.24</td>
+                        <td>48.01</td>
+                        <td>49.90</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Mathematical Science Occupations</td>
+                        <td>Data Scientists</td>
+                        <td>4.23</td>
+                        <td>8.810664</td>
+                      </tr>
+                      <tr>
+                        <th>68</th>
+                        <td>Computer and Mathematical Occupations - Comput...</td>
+                        <td>505150</td>
+                        <td>49.14</td>
+                        <td>48.01</td>
+                        <td>47.89</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Computer Occupations</td>
+                        <td>Computer Systems Analysts</td>
+                        <td>1.13</td>
+                        <td>2.353676</td>
+                      </tr>
+                      <tr>
+                        <th>86</th>
+                        <td>Computer and Mathematical Occupations - Mathem...</td>
+                        <td>31370</td>
+                        <td>47.81</td>
+                        <td>48.01</td>
+                        <td>49.90</td>
+                        <td>Computer and Mathematical Occupations</td>
+                        <td>Mathematical Science Occupations</td>
+                        <td>Statisticians</td>
+                        <td>-0.20</td>
+                        <td>-0.416580</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="text/javascript" src="/relay.js"></script>
+  </body>
+</html>
