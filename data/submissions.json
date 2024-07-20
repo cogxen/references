@@ -114,6 +114,56 @@
           "isLecture": false
         }
       ]
+    },
+    {
+      "section": "Cleaning and Transforming Columns",
+      "items": [
+        {
+          "name": "Column Information",
+          "url": "/references/cleaning-and-transforming-columns/column-information/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Renaming and Removing Columns",
+          "url": "/references/cleaning-and-transforming-columns/renaming-and-removing-columns/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Calculations",
+          "url": "/references/cleaning-and-transforming-columns/calculations/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Column Calculations",
+          "url": "/references/cleaning-and-transforming-columns/column-calculations/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Splitting and Combining Columns",
+          "url": "/references/cleaning-and-transforming-columns/splitting-and-combining-columns/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Modifying Text Data",
+          "url": "/references/cleaning-and-transforming-columns/modifying-text-data/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Changing Data Types",
+          "url": "/references/cleaning-and-transforming-columns/changing-data-types/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Cleaning and Transforming Columns",
+          "url": "/references/cleaning-and-transforming-columns/index.html",
+          "isLecture": false
+        },
+        {
+          "name": "Analyze Wage Data with Python",
+          "url": "/references/cleaning-and-transforming-columns/analyze-wage-data-with-python/index.html",
+          "isLecture": false
+        }
+      ]
     }
   ]
 }
