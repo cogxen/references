@@ -1,6 +1,16 @@
 {
   "submissions": [
     {
+      "section": "Projects",
+      "items": [
+        {
+          "name": "Analyzing FIFA World Cup Tournament",
+          "url": "/references/project/analyzing-fifa-world-cup-tournament/index.html",
+          "isProject": true
+        }
+      ]
+    },
+    {
       "section": "Exploring Data",
       "items": [
         {
