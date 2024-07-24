@@ -209,6 +209,61 @@
           "isLecture": true
         }
       ]
+    },
+    {
+      "section": "Aggregating",
+      "items": [
+        {
+          "name": "Functions",
+          "url": "/references/aggregating/functions/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Booleans",
+          "url": "/references/aggregating/booleans/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "NumPy Functions",
+          "url": "/references/aggregating/numpy-functions/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "GroupBy: One Column",
+          "url": "/references/aggregating/groupby-one-column/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Cleaning GroupBy Output",
+          "url": "/references/aggregating/cleaning-groupby-output/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "GroupBy: Multiple Columns",
+          "url": "/references/aggregating/groupby-multiple-columns/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "GroupBy: Multiple Functions",
+          "url": "/references/aggregating/groupby-multiple-functions/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Pivot",
+          "url": "/references/aggregating/pivot/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Split-Apply-Combine",
+          "url": "/references/aggregating/split-apply-combine/index.html",
+          "isLecture": true
+        },
+        {
+          "name": "Aggregating",
+          "url": "/references/aggregating/index.html",
+          "isLecture": false
+        }
+      ]
     }
   ]
 }
