@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="shortcut icon" href="/src/img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/src/styles/jp.css" />
+    <title>GroupBy Multiple Functions</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
+      defer
+    ></script>
+    <script type="text/x-mathjax-config" defer>
+      init_mathjax = function() {
+          if (window.MathJax) {
+          // MathJax loaded
+              MathJax.Hub.Config({
+                  TeX: {
+                      equationNumbers: {
+                      autoNumber: "AMS",
+                      useLabelIds: true
+                      }
+                  },
+                  tex2jax: {
+                      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                      processEscapes: true,
+                      processEnvironments: true
+                  },
+                  displayAlign: 'center',
+                  CommonHTML: {
+                      linebreaks: {
+                      automatic: true
+                      }
+                  }
+              });
+
+              MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+          }
+      }
+      init_mathjax();
+    </script>
+    <script type="module" defer>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const diagrams = document.querySelectorAll(".jp-Mermaid > pre.mermaid")
+        // do not load mermaidjs if not needed
+        if (!diagrams.length) {
+          return
+        }
+        const mermaid = (
+          await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.3.1/mermaid.esm.min.mjs")
+        ).default
+        const parser = new DOMParser()
+
+        mermaid.initialize({
+          maxTextSize: 100000,
+          startOnLoad: false,
+          fontFamily: window
+            .getComputedStyle(document.body)
+            .getPropertyValue("--jp-ui-font-family"),
+          theme: document.querySelector("body[data-jp-theme-light='true']") ? "default" : "dark",
+        })
+
+        let _nextMermaidId = 0
+
+        function makeMermaidImage(svg) {
+          const img = document.createElement("img")
+          const doc = parser.parseFromString(svg, "image/svg+xml")
+          const svgEl = doc.querySelector("svg")
+          const { maxWidth } = svgEl?.style || {}
+          const firstTitle = doc.querySelector("title")
+          const firstDesc = doc.querySelector("desc")
+
+          img.setAttribute("src", `data:image/svg+xml,${encodeURIComponent(svg)}`)
+          if (maxWidth) {
+            img.width = parseInt(maxWidth)
+          }
+          if (firstTitle) {
+            img.setAttribute("alt", firstTitle.textContent)
+          }
+          if (firstDesc) {
+            const caption = document.createElement("figcaption")
+            caption.className = "sr-only"
+            caption.textContent = firstDesc.textContent
+            return [img, caption]
+          }
+          return [img]
+        }
+
+        async function makeMermaidError(text) {
+          let errorMessage = ""
+          try {
+            await mermaid.parse(text)
+          } catch (err) {
+            errorMessage = `${err}`
+          }
+
+          const result = document.createElement("details")
+          result.className = "jp-RenderedMermaid-Details"
+          const summary = document.createElement("summary")
+          summary.className = "jp-RenderedMermaid-Summary"
+          const pre = document.createElement("pre")
+          const code = document.createElement("code")
+          code.innerText = text
+          pre.appendChild(code)
+          summary.appendChild(pre)
+          result.appendChild(summary)
+
+          const warning = document.createElement("pre")
+          warning.innerText = errorMessage
+          result.appendChild(warning)
+          return [result]
+        }
+
+        async function renderOneMarmaid(src) {
+          const id = `jp-mermaid-${_nextMermaidId++}`
+          const parent = src.parentNode
+          let raw = src.textContent.trim()
+          const el = document.createElement("div")
+          el.style.visibility = "hidden"
+          document.body.appendChild(el)
+          let results = null
+          let output = null
+          try {
+            const { svg } = await mermaid.render(id, raw, el)
+            results = makeMermaidImage(svg)
+            output = document.createElement("figure")
+            results.map(output.appendChild, output)
+          } catch (err) {
+            parent.classList.add("jp-mod-warning")
+            results = await makeMermaidError(raw)
+            output = results[0]
+          } finally {
+            el.remove()
+          }
+          parent.classList.add("jp-RenderedMermaid")
+          parent.appendChild(output)
+        }
+
+        void Promise.all([...diagrams].map(renderOneMarmaid))
+      })
+    </script>
+  </head>
+  <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
+    <main>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4c609b12">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h4 id="Setup">Setup<a class="anchor-link" href="#Setup">¶</a></h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d74ddca2">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>
+                Start by running the cell below to import <code>pandas</code>, <code>numpy</code>,
+                and the <code>results.csv</code> dataset.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_setup" id="cell-id=047d9dc9">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;results.csv&#39;</span><span class="p">)</span>
+<span class="n">results</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[1]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>date</th>
+                        <th>year</th>
+                        <th>home_team</th>
+                        <th>away_team</th>
+                        <th>home_score</th>
+                        <th>away_score</th>
+                        <th>total_goals</th>
+                        <th>win_margin</th>
+                        <th>tournament</th>
+                        <th>city</th>
+                        <th>country</th>
+                        <th>neutral</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>0</th>
+                        <td>2000-01-04</td>
+                        <td>2000</td>
+                        <td>Egypt</td>
+                        <td>Togo</td>
+                        <td>2</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>1</td>
+                        <td>Friendly</td>
+                        <td>Aswan</td>
+                        <td>Egypt</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <td>2000-01-07</td>
+                        <td>2000</td>
+                        <td>Tunisia</td>
+                        <td>Togo</td>
+                        <td>7</td>
+                        <td>0</td>
+                        <td>7</td>
+                        <td>7</td>
+                        <td>Friendly</td>
+                        <td>Tunis</td>
+                        <td>Tunisia</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <th>2</th>
+                        <td>2000-01-08</td>
+                        <td>2000</td>
+                        <td>Trinidad and Tobago</td>
+                        <td>Canada</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>Friendly</td>
+                        <td>Port of Spain</td>
+                        <td>Trinidad and Tobago</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <th>3</th>
+                        <td>2000-01-09</td>
+                        <td>2000</td>
+                        <td>Burkina Faso</td>
+                        <td>Gabon</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>0</td>
+                        <td>Friendly</td>
+                        <td>Ouagadougou</td>
+                        <td>Burkina Faso</td>
+                        <td>False</td>
+                      </tr>
+                      <tr>
+                        <th>4</th>
+                        <td>2000-01-09</td>
+                        <td>2000</td>
+                        <td>Guatemala</td>
+                        <td>Armenia</td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>0</td>
+                        <td>Friendly</td>
+                        <td>Los Angeles</td>
+                        <td>United States</td>
+                        <td>True</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d9f3254b">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h4 id="Narrative-Example">
+                Narrative Example<a class="anchor-link" href="#Narrative-Example">¶</a>
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=82663440">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>
+                The cell below generates the example from the exercise narrative, with some
+                additional team data. Run the code to see how pandas performs groupby aggregations
+                using multiple columns. Feel free to experiment with the different options!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=19881dc0">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="s1">&#39;2022-11-17&#39;</span><span class="p">,</span> <span class="s1">&#39;South Africa&#39;</span><span class="p">,</span> <span class="s1">&#39;Mozambique&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;Friendly&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-11-20&#39;</span><span class="p">,</span> <span class="s1">&#39;Norway&#39;</span><span class="p">,</span> <span class="s1">&#39;Finland&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Friendly&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-11-19&#39;</span><span class="p">,</span> <span class="s1">&#39;Peru&#39;</span><span class="p">,</span> <span class="s1">&#39;Bolivia&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Friendly&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-12-02&#39;</span><span class="p">,</span> <span class="s1">&#39;South Korea&#39;</span><span class="p">,</span> <span class="s1">&#39;Portugal&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;FIFA World Cup&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-12-10&#39;</span><span class="p">,</span> <span class="s1">&#39;England&#39;</span><span class="p">,</span> <span class="s1">&#39;France&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;FIFA World Cup&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-12-14&#39;</span><span class="p">,</span> <span class="s1">&#39;Vietnam&#39;</span><span class="p">,</span> <span class="s1">&#39;Philippines&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Friendly&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-12-17&#39;</span><span class="p">,</span> <span class="s1">&#39;Croatia&#39;</span><span class="p">,</span> <span class="s1">&#39;Morocco&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;FIFA World Cup&#39;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s1">&#39;2022-12-18&#39;</span><span class="p">,</span> <span class="s1">&#39;Argentina&#39;</span><span class="p">,</span> <span class="s1">&#39;France&#39;</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;FIFA World Cup&#39;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;home_team&#39;</span><span class="p">,</span> <span class="s1">&#39;away_team&#39;</span><span class="p">,</span> <span class="s1">&#39;total_goals&#39;</span><span class="p">,</span> <span class="s1">&#39;tournament&#39;</span><span class="p">])</span>
+
+<span class="c1"># Aggregation functions on multiple columns</span>
+<span class="n">goals</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;tournament&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;date&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> 
+     <span class="s1">&#39;total_goals&#39;</span><span class="p">:[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span><span class="s1">&#39;median&#39;</span><span class="p">]})</span>
+
+<span class="c1"># Renaming columns</span>
+<span class="n">goals</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;num_games&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;mean_goals&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;median_goals&#39;</span><span class="p">]</span>
+
+<span class="n">goals</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>num_games</th>
+                        <th>mean_goals</th>
+                        <th>median_goals</th>
+                      </tr>
+                      <tr>
+                        <th>tournament</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>FIFA World Cup</th>
+                        <td>4</td>
+                        <td>3.75</td>
+                        <td>3.0</td>
+                      </tr>
+                      <tr>
+                        <th>Friendly</th>
+                        <td>4</td>
+                        <td>1.75</td>
+                        <td>1.5</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=079e0e0c">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h4 id="1.-Average-Home-and-Away-Goals-by-Tournament">
+                1. Average Home and Away Goals by Tournament<a
+                  class="anchor-link"
+                  href="#1.-Average-Home-and-Away-Goals-by-Tournament"
+                  >¶</a
+                >
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7a8c74d0">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>
+                Group <code>results</code> by <code>tournament</code>, and calculate the mean
+                <code>home_score</code> and <code>away_score</code>. Save the results to a DataFrame
+                named <code>tournament_scores</code>.
+              </p>
+              <p>
+                Rename the columns of <code>tournament_scores</code> to <code>home_mean</code> and
+                <code>away_mean</code>. Do not reset the index.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp1" id="cell-id=b318baec">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">tournament_scores</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;tournament&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;home_score&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;away_score&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">})</span>
+<span class="n">tournament_scores</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;home_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;away_mean&#39;</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">tournament_scores</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>home_mean</th>
+                        <th>away_mean</th>
+                      </tr>
+                      <tr>
+                        <th>tournament</th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>AFC Asian Cup qualification</th>
+                        <td>2.086022</td>
+                        <td>1.096774</td>
+                      </tr>
+                      <tr>
+                        <th>African Cup of Nations</th>
+                        <td>1.263658</td>
+                        <td>0.952494</td>
+                      </tr>
+                      <tr>
+                        <th>African Cup of Nations qualification</th>
+                        <td>1.536561</td>
+                        <td>0.823123</td>
+                      </tr>
+                      <tr>
+                        <th>CECAFA Cup</th>
+                        <td>1.413490</td>
+                        <td>1.102639</td>
+                      </tr>
+                      <tr>
+                        <th>FIFA World Cup</th>
+                        <td>1.375000</td>
+                        <td>1.138021</td>
+                      </tr>
+                      <tr>
+                        <th>FIFA World Cup qualification</th>
+                        <td>1.755362</td>
+                        <td>1.112707</td>
+                      </tr>
+                      <tr>
+                        <th>Friendly</th>
+                        <td>1.522885</td>
+                        <td>1.000268</td>
+                      </tr>
+                      <tr>
+                        <th>Gold Cup</th>
+                        <td>1.670034</td>
+                        <td>1.010101</td>
+                      </tr>
+                      <tr>
+                        <th>UEFA Euro qualification</th>
+                        <td>1.575406</td>
+                        <td>1.203403</td>
+                      </tr>
+                      <tr>
+                        <th>UEFA Nations League</th>
+                        <td>1.365385</td>
+                        <td>1.068376</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6a172e5e">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h4 id="2.-Largest-Margin-of-Victory-per-Matchup">
+                2. Largest Margin of Victory per Matchup<a
+                  class="anchor-link"
+                  href="#2.-Largest-Margin-of-Victory-per-Matchup"
+                  >¶</a
+                >
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ab80893d">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>
+                Group by <code>home_team</code> and <code>away_team</code>. Calculate the minimum
+                and maximum <code>win_margin</code> for each group.
+              </p>
+              <p>Save the results to a DataFrame named <code>matchup_margins</code>.</p>
+              <p>
+                Rename the columns <code>min_margin</code> and <code>max_margin</code>. Do not reset
+                the index.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp2" id="cell-id=e73ed471">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">matchup_margins</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;home_team&#39;</span><span class="p">,</span> <span class="s1">&#39;away_team&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;win_margin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">]})</span>
+<span class="n">matchup_margins</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;min_margin&#39;</span><span class="p">,</span> <span class="s1">&#39;max_margin&#39;</span><span class="p">]</span>
+
+<span class="c1"># show output</span>
+<span class="n">matchup_margins</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th></th>
+                        <th>min_margin</th>
+                        <th>max_margin</th>
+                      </tr>
+                      <tr>
+                        <th>home_team</th>
+                        <th>away_team</th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>Abkhazia</th>
+                        <th>Artsakh</th>
+                        <td>0</td>
+                        <td>0</td>
+                      </tr>
+                      <tr>
+                        <th rowspan="9" valign="top">Afghanistan</th>
+                        <th>Bangladesh</th>
+                        <td>1</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <th>Cambodia</th>
+                        <td>0</td>
+                        <td>3</td>
+                      </tr>
+                      <tr>
+                        <th>India</th>
+                        <td>0</td>
+                        <td>0</td>
+                      </tr>
+                      <tr>
+                        <th>Japan</th>
+                        <td>-6</td>
+                        <td>-6</td>
+                      </tr>
+                      <tr>
+                        <th>Jordan</th>
+                        <td>0</td>
+                        <td>0</td>
+                      </tr>
+                      <tr>
+                        <th>Kyrgyzstan</th>
+                        <td>0</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <th>Maldives</th>
+                        <td>1</td>
+                        <td>1</td>
+                      </tr>
+                      <tr>
+                        <th>Oman</th>
+                        <td>-1</td>
+                        <td>-1</td>
+                      </tr>
+                      <tr>
+                        <th>Pakistan</th>
+                        <td>3</td>
+                        <td>3</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=8d481799">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <h4 id="3.-Measuring-Home-Performance">
+                3. Measuring Home Performance<a
+                  class="anchor-link"
+                  href="#3.-Measuring-Home-Performance"
+                  >¶</a
+                >
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f06783bb">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+              data-mime-type="text/markdown"
+            >
+              <p>Let&#39;s look at the home performance of teams.</p>
+              <p>Group by <code>home_team</code>. Calculate</p>
+              <ul>
+                <li>
+                  the number of games played by each <code>home_team</code> (use a count of
+                  <code>date</code>),
+                </li>
+                <li>the mean <code>home_score</code>,</li>
+                <li>and their opponents&#39; mean <code>away_score</code>.</li>
+              </ul>
+              <p>Save the results to a DataFrame named <code>home_performance</code>.</p>
+              <p>
+                Rename the columns <code>num_games</code>, <code>mean_goals</code>,
+                <code>mean_goals_by_opponent</code>. Do not reset the index.
+              </p>
+              <p>
+                We&#39;ve added code to sort <code>home_performance</code> by the highest to lowest
+                number of games played by each team.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="jp-Cell jp-CodeCell jp-Notebook-cell celltag_cp3" id="cell-id=4ddf801b">
+        <div class="jp-Cell-inputWrapper" tabindex="0">
+          <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+          <div class="jp-InputArea jp-Cell-inputArea">
+            <div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+            <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+              <div class="cm-editor cm-s-jupyter">
+                <div class="highlight hl-ipython3">
+                  <pre><span></span><span class="c1">## YOUR SOLUTION HERE ##</span>
+<span class="n">home_performance</span> <span class="o">=</span> <span class="n">results</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;home_team&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;date&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">,</span> <span class="s1">&#39;home_score&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;away_score&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">})</span>
+
+<span class="n">home_performance</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;num_games&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;mean_goals&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;mean_goals_by_opponent&#39;</span><span class="p">]</span>
+
+<span class="c1"># show solution</span>
+<span class="n">home_performance</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;num_games&#39;</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="jp-Cell-outputWrapper">
+          <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+          <div class="jp-OutputArea jp-Cell-outputArea">
+            <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+              <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+              <div
+                class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+                data-mime-type="text/html"
+                tabindex="0"
+              >
+                <div>
+                  <style scoped="">
+                    .dataframe tbody tr th:only-of-type {
+                      vertical-align: middle;
+                    }
+
+                    .dataframe tbody tr th {
+                      vertical-align: top;
+                    }
+
+                    .dataframe thead th {
+                      text-align: right;
+                    }
+                  </style>
+                  <table border="1" class="dataframe">
+                    <thead>
+                      <tr style="text-align: right">
+                        <th></th>
+                        <th>num_games</th>
+                        <th>mean_goals</th>
+                        <th>mean_goals_by_opponent</th>
+                      </tr>
+                      <tr>
+                        <th>home_team</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>Mexico</th>
+                        <td>237</td>
+                        <td>1.864979</td>
+                        <td>0.751055</td>
+                      </tr>
+                      <tr>
+                        <th>United States</th>
+                        <td>225</td>
+                        <td>2.013333</td>
+                        <td>0.768889</td>
+                      </tr>
+                      <tr>
+                        <th>Qatar</th>
+                        <td>180</td>
+                        <td>1.655556</td>
+                        <td>0.922222</td>
+                      </tr>
+                      <tr>
+                        <th>Egypt</th>
+                        <td>174</td>
+                        <td>2.183908</td>
+                        <td>0.632184</td>
+                      </tr>
+                      <tr>
+                        <th>South Korea</th>
+                        <td>172</td>
+                        <td>1.883721</td>
+                        <td>0.761628</td>
+                      </tr>
+                      <tr>
+                        <th>Saudi Arabia</th>
+                        <td>166</td>
+                        <td>1.921687</td>
+                        <td>0.746988</td>
+                      </tr>
+                      <tr>
+                        <th>France</th>
+                        <td>163</td>
+                        <td>2.042945</td>
+                        <td>0.656442</td>
+                      </tr>
+                      <tr>
+                        <th>Bahrain</th>
+                        <td>161</td>
+                        <td>1.652174</td>
+                        <td>0.888199</td>
+                      </tr>
+                      <tr>
+                        <th>Oman</th>
+                        <td>159</td>
+                        <td>1.779874</td>
+                        <td>0.779874</td>
+                      </tr>
+                      <tr>
+                        <th>Germany</th>
+                        <td>158</td>
+                        <td>2.544304</td>
+                        <td>1.006329</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="text/javascript" src="/relay.js"></script>
+  </body>
+</html>
