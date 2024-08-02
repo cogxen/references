@@ -262,6 +262,11 @@
           "name": "Aggregating",
           "url": "/references/aggregating/index.html",
           "isLecture": false
+        },
+        {
+          "name": "Compare Ad Effectiveness Using A/B Tests",
+          "url": "/references/aggregating/compare-ad-effectiveness-using-ab-tests/index.html",
+          "isLecture": false
         }
       ]
     }
