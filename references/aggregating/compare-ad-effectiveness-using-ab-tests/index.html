@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="shortcut icon" href="/src/img/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="/src/styles/jp.css" />
+    <title>Exam | Compare Ad Effectiveness Using A/B Tests</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"
+      defer
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML-full,Safe"
+      defer
+    ></script>
+    <script type="text/x-mathjax-config" defer>
+      init_mathjax = function() {
+          if (window.MathJax) {
+          // MathJax loaded
+              MathJax.Hub.Config({
+                  TeX: {
+                      equationNumbers: {
+                      autoNumber: "AMS",
+                      useLabelIds: true
+                      }
+                  },
+                  tex2jax: {
+                      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                      processEscapes: true,
+                      processEnvironments: true
+                  },
+                  displayAlign: 'center',
+                  CommonHTML: {
+                      linebreaks: {
+                      automatic: true
+                      }
+                  }
+              });
+
+              MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+          }
+      }
+      init_mathjax();
+    </script>
+    <script type="module" defer>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const diagrams = document.querySelectorAll(".jp-Mermaid > pre.mermaid")
+        // do not load mermaidjs if not needed
+        if (!diagrams.length) {
+          return
+        }
+        const mermaid = (
+          await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.3.1/mermaid.esm.min.mjs")
+        ).default
+        const parser = new DOMParser()
+
+        mermaid.initialize({
+          maxTextSize: 100000,
+          startOnLoad: false,
+          fontFamily: window
+            .getComputedStyle(document.body)
+            .getPropertyValue("--jp-ui-font-family"),
+          theme: document.querySelector("body[data-jp-theme-light='true']") ? "default" : "dark",
+        })
+
+        let _nextMermaidId = 0
+
+        function makeMermaidImage(svg) {
+          const img = document.createElement("img")
+          const doc = parser.parseFromString(svg, "image/svg+xml")
+          const svgEl = doc.querySelector("svg")
+          const { maxWidth } = svgEl?.style || {}
+          const firstTitle = doc.querySelector("title")
+          const firstDesc = doc.querySelector("desc")
+
+          img.setAttribute("src", `data:image/svg+xml,${encodeURIComponent(svg)}`)
+          if (maxWidth) {
+            img.width = parseInt(maxWidth)
+          }
+          if (firstTitle) {
+            img.setAttribute("alt", firstTitle.textContent)
+          }
+          if (firstDesc) {
+            const caption = document.createElement("figcaption")
+            caption.className = "sr-only"
+            caption.textContent = firstDesc.textContent
+            return [img, caption]
+          }
+          return [img]
+        }
+
+        async function makeMermaidError(text) {
+          let errorMessage = ""
+          try {
+            await mermaid.parse(text)
+          } catch (err) {
+            errorMessage = `${err}`
+          }
+
+          const result = document.createElement("details")
+          result.className = "jp-RenderedMermaid-Details"
+          const summary = document.createElement("summary")
+          summary.className = "jp-RenderedMermaid-Summary"
+          const pre = document.createElement("pre")
+          const code = document.createElement("code")
+          code.innerText = text
+          pre.appendChild(code)
+          summary.appendChild(pre)
+          result.appendChild(summary)
+
+          const warning = document.createElement("pre")
+          warning.innerText = errorMessage
+          result.appendChild(warning)
+          return [result]
+        }
+
+        async function renderOneMarmaid(src) {
+          const id = `jp-mermaid-${_nextMermaidId++}`
+          const parent = src.parentNode
+          let raw = src.textContent.trim()
+          const el = document.createElement("div")
+          el.style.visibility = "hidden"
+          document.body.appendChild(el)
+          let results = null
+          let output = null
+          try {
+            const { svg } = await mermaid.render(id, raw, el)
+            results = makeMermaidImage(svg)
+            output = document.createElement("figure")
+            results.map(output.appendChild, output)
+          } catch (err) {
+            parent.classList.add("jp-mod-warning")
+            results = await makeMermaidError(raw)
+            output = results[0]
+          } finally {
+            el.remove()
+          }
+          parent.classList.add("jp-RenderedMermaid")
+          parent.appendChild(output)
+        }
+
+        void Promise.all([...diagrams].map(renderOneMarmaid))
+      })
+    </script>
+  </head>
+  <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-Group-1---Import,-Inspect,-and-Merge">
+              Task Group 1 - Import, Inspect, and Merge<a
+                class="anchor-link"
+                href="#Task-Group-1---Import,-Inspect,-and-Merge"
+                >¶</a
+              >
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-1">Task 1<a class="anchor-link" href="#Task-1">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Import the <strong>pandas</strong> and <strong>numpy</strong> libraries using their
+              standard aliases.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-2">Task 2<a class="anchor-link" href="#Task-2">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Import the CSV file <code>users.csv</code> and assign it to the variable
+              <code>users</code>. Preview the first five rows.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">users</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;users.csv&#39;</span><span class="p">)</span>
+<span class="n">users</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[2]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>user_id</th>
+                      <th>timestamp</th>
+                      <th>device_id</th>
+                      <th>clicked</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>U790620</td>
+                      <td>2022-01-01 00:23:33 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>U584867</td>
+                      <td>2022-01-01 01:30:07 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>U128681</td>
+                      <td>2022-01-01 01:30:14 Saturday</td>
+                      <td>M002</td>
+                      <td>True</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>U694898</td>
+                      <td>2022-01-01 01:31:55 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>U456823</td>
+                      <td>2022-01-01 03:18:25 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-3">Task 3<a class="anchor-link" href="#Task-3">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Import the CSV file <code>advertisements.csv</code> and assign it to the variable
+              <code>advertisements</code>. Preview the first five rows.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">advertisements</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;advertisements.csv&#39;</span><span class="p">)</span>
+<span class="n">advertisements</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>user_id</th>
+                      <th>timestamp</th>
+                      <th>ad_source</th>
+                      <th>ad_version</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>U790620</td>
+                      <td>2022-01-01 00:23:33 Saturday</td>
+                      <td>Twitter</td>
+                      <td>A</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>U584867</td>
+                      <td>2022-01-01 01:30:07 Saturday</td>
+                      <td>Google</td>
+                      <td>B</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>U128681</td>
+                      <td>2022-01-01 01:30:14 Saturday</td>
+                      <td>TikTok</td>
+                      <td>B</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>U694898</td>
+                      <td>2022-01-01 01:31:55 Saturday</td>
+                      <td>TikTok</td>
+                      <td>A</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>U456823</td>
+                      <td>2022-01-01 03:18:25 Saturday</td>
+                      <td>Google</td>
+                      <td>A</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-4">Task 4<a class="anchor-link" href="#Task-4">¶</a></h3>
+            <p>
+              There are two <code>user_id</code> columns, one in each DataFrame. Let&#39;s do a
+              quick check to see if they have the same number of unique users. If they don&#39;t,
+              we&#39;ll know to be careful about this issue later on in our analysis.
+            </p>
+            <p>
+              Count the unique number of <code>user_id</code>s in <code>users</code> and separately
+              in <code>advertisements</code>.
+            </p>
+            <p>Preview both counts.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">users_count</span> <span class="o">=</span> <span class="n">users</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+<span class="n">advertisements_count</span> <span class="o">=</span> <span class="n">advertisements</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">users_count</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">advertisements_count</span><span class="p">)</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+            <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+              <pre>
+15122
+14602
+</pre
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-5">Task 5<a class="anchor-link" href="#Task-5">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              In order to effectively analyze the results of our A/B test, we&#39;ll need rows that
+              contain user information from both DataFrames. Specifically, we&#39;ll need to know
+              whether or not a user <code>clicked</code> on the ad in <code>users</code> and
+              we&#39;ll need to know which <code>ad_version</code> the user viewed in
+              <code>advertisements</code>.
+            </p>
+            <p>
+              Merge <code>users</code> and <code>advertisements</code> on the
+              <code>user_id</code> and <code>timestamp</code> columns. Make sure to only return rows
+              that have data from both DataFrames.
+            </p>
+            <p>
+              Save the merged DataFrame to a variable named <code>users_ads</code> and preview the
+              first five rows.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">users_ads</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">users</span><span class="p">,</span> 
+                     <span class="n">right</span><span class="o">=</span><span class="n">advertisements</span><span class="p">,</span> 
+                     <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">],</span> 
+                     <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">,</span> <span class="s1">&#39;timestamp&#39;</span><span class="p">],</span> 
+                     <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
+<span class="n">users_ads</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>user_id</th>
+                      <th>timestamp</th>
+                      <th>device_id</th>
+                      <th>clicked</th>
+                      <th>ad_source</th>
+                      <th>ad_version</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>U790620</td>
+                      <td>2022-01-01 00:23:33 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                      <td>Twitter</td>
+                      <td>A</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>U584867</td>
+                      <td>2022-01-01 01:30:07 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>B</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>U128681</td>
+                      <td>2022-01-01 01:30:14 Saturday</td>
+                      <td>M002</td>
+                      <td>True</td>
+                      <td>TikTok</td>
+                      <td>B</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>U694898</td>
+                      <td>2022-01-01 01:31:55 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                      <td>TikTok</td>
+                      <td>A</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>U456823</td>
+                      <td>2022-01-01 03:18:25 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>A</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-Group-2---Use-Aggregations-to-Calculate-Click-Through-Rate">
+              Task Group 2 - Use Aggregations to Calculate Click-Through Rate<a
+                class="anchor-link"
+                href="#Task-Group-2---Use-Aggregations-to-Calculate-Click-Through-Rate"
+                >¶</a
+              >
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-6">Task 6<a class="anchor-link" href="#Task-6">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              To begin our exploration, let&#39;s count how many times each
+              <code>ad_version</code> was viewed by users in <code>users_ads</code>.
+            </p>
+            <p>
+              Group <code>users_ads</code> by <code>ad_version</code> and <code>count</code> the
+              <code>user_id</code> column. Save the result to the variable
+              <code>ad_view_count</code>, and rename the <code>user_id</code> column
+              <code>num_views</code>.
+            </p>
+            <p>Preview the final result.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">ad_view_count</span> <span class="o">=</span> <span class="n">users_ads</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ad_version&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;user_id&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">})</span>
+<span class="n">ad_view_count</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;num_views&#39;</span><span class="p">]</span>
+<span class="n">ad_view_count</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>num_views</th>
+                    </tr>
+                    <tr>
+                      <th>ad_version</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>A</th>
+                      <td>7154</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>7270</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-7">Task 7<a class="anchor-link" href="#Task-7">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              There may be instances where individual users saw the ads more than once. Let&#39;s
+              re-do the groupby from Task 6, but adding a column with the number of unique
+              <code>user_id</code>s for each ad.
+            </p>
+            <p>
+              Modify <code>ad_view_count</code> to also return the count of unique users in
+              <code>user_id</code>. Name this new column <code>nunique</code>.
+            </p>
+            <p>Preview the modified <code>ad_view_count</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">ad_view_count</span> <span class="o">=</span> <span class="n">users_ads</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ad_version&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;user_id&#39;</span><span class="p">:[</span><span class="s1">&#39;count&#39;</span><span class="p">,</span><span class="s1">&#39;nunique&#39;</span><span class="p">]})</span>
+<span class="n">ad_view_count</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;num_views&#39;</span><span class="p">,</span><span class="s1">&#39;nunique&#39;</span><span class="p">]</span>
+<span class="n">ad_view_count</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>num_views</th>
+                      <th>nunique</th>
+                    </tr>
+                    <tr>
+                      <th>ad_version</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>A</th>
+                      <td>7154</td>
+                      <td>7125</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>7270</td>
+                      <td>7232</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-8">Task 8<a class="anchor-link" href="#Task-8">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Group by <code>ad_version</code> and compute the <strong>percentage</strong> of users
+              who clicked on each ad. This metric is known as the
+              <strong>click-through rate (CTR)</strong> and is widely used as a performance metric.
+            </p>
+            <p>Save the resultin DataFrame to the variable <code>ad_ctr_pct</code>.</p>
+            <p>Rename the <code>clicked</code> column to <code>click_rate</code>.</p>
+            <p>Preview <code>ad_ctr_pct</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">ad_ctr_pct</span> <span class="o">=</span> <span class="n">users_ads</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ad_version&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;clicked&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">})</span> <span class="o">*</span> <span class="mi">100</span>
+<span class="n">ad_ctr_pct</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;click_rate&#39;</span><span class="p">]</span>
+<span class="n">ad_ctr_pct</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>click_rate</th>
+                    </tr>
+                    <tr>
+                      <th>ad_version</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>A</th>
+                      <td>12.412636</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>19.422283</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-Group-3:-Compare-Ad-Performances-by-Social-Media-Platform">
+              Task Group 3: Compare Ad Performances by Social Media Platform<a
+                class="anchor-link"
+                href="#Task-Group-3:-Compare-Ad-Performances-by-Social-Media-Platform"
+                >¶</a
+              >
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-9">Task 9<a class="anchor-link" href="#Task-9">¶</a></h3>
+            <p>Let&#39;s break down click-through rate by social media platform.</p>
+            <p>
+              Group <code>users_ads</code> by <code>ad_source</code> and <code>ad_version</code>,
+              and compute the percent of <code>True</code> values in <code>clicked</code>.
+            </p>
+            <p>
+              Rename the column containing the percents <code>ctr</code> and view the full resulting
+              DataFrame.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">social</span> <span class="o">=</span> <span class="n">users_ads</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;ad_source&#39;</span><span class="p">,</span> <span class="s1">&#39;ad_version&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;clicked&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">})</span>
+<span class="n">social</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ctr&#39;</span><span class="p">]</span>
+<span class="n">social</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th></th>
+                      <th>ctr</th>
+                    </tr>
+                    <tr>
+                      <th>ad_source</th>
+                      <th>ad_version</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th rowspan="2" valign="top">Google</th>
+                      <th>A</th>
+                      <td>0.128385</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>0.198825</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Meta</th>
+                      <th>A</th>
+                      <td>0.129664</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>0.188034</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">TikTok</th>
+                      <th>A</th>
+                      <td>0.115819</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>0.202358</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Twitter</th>
+                      <th>A</th>
+                      <td>0.119624</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>0.175070</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-10">Task 10<a class="anchor-link" href="#Task-10">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>It is a little hard to read the long-format table from Task 9.</p>
+            <p>
+              Pivot <code>users_ads</code> to create a wide-format version of this table, and name
+              it <code>ad_social</code>.
+            </p>
+            <p>Print all rows of <code>ad_social</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">ad_social</span> <span class="o">=</span> <span class="n">users_ads</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;ad_source&#39;</span><span class="p">,</span> 
+                                  <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;ad_version&#39;</span><span class="p">,</span> 
+                                  <span class="n">values</span><span class="o">=</span><span class="s1">&#39;clicked&#39;</span><span class="p">,</span> 
+                                  <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+
+<span class="n">ad_social</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th>ad_version</th>
+                      <th>A</th>
+                      <th>B</th>
+                    </tr>
+                    <tr>
+                      <th>ad_source</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>Google</th>
+                      <td>0.128385</td>
+                      <td>0.198825</td>
+                    </tr>
+                    <tr>
+                      <th>Meta</th>
+                      <td>0.129664</td>
+                      <td>0.188034</td>
+                    </tr>
+                    <tr>
+                      <th>TikTok</th>
+                      <td>0.115819</td>
+                      <td>0.202358</td>
+                    </tr>
+                    <tr>
+                      <th>Twitter</th>
+                      <td>0.119624</td>
+                      <td>0.175070</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-Group-4---Compare-Ad-Performances-by-Tech-Device">
+              Task Group 4 - Compare Ad Performances by Tech Device<a
+                class="anchor-link"
+                href="#Task-Group-4---Compare-Ad-Performances-by-Tech-Device"
+                >¶</a
+              >
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-11">Task 11<a class="anchor-link" href="#Task-11">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Let&#39;s now investigate the click-through rates broken down by device (cell phone,
+              tablet, etc.)
+            </p>
+            <p>
+              Import the CSV file <code>devices.csv</code> and assign it to the variable
+              <code>devices</code>. Preview the full dataset.
+            </p>
+            <p>How many different devices are there?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">devices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;devices.csv&#39;</span><span class="p">)</span>
+<span class="n">devices</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>device_id</th>
+                      <th>device_type</th>
+                      <th>brand</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>M001</td>
+                      <td>Mobile</td>
+                      <td>Apple</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>M002</td>
+                      <td>Mobile</td>
+                      <td>Samsung</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>M003</td>
+                      <td>Mobile</td>
+                      <td>Google</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>M004</td>
+                      <td>Mobile</td>
+                      <td>Huawei</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>M005</td>
+                      <td>Mobile</td>
+                      <td>Xiaomi</td>
+                    </tr>
+                    <tr>
+                      <th>5</th>
+                      <td>M006</td>
+                      <td>Mobile</td>
+                      <td>vivo</td>
+                    </tr>
+                    <tr>
+                      <th>6</th>
+                      <td>P001</td>
+                      <td>PC</td>
+                      <td>Apple</td>
+                    </tr>
+                    <tr>
+                      <th>7</th>
+                      <td>P002</td>
+                      <td>PC</td>
+                      <td>Dell</td>
+                    </tr>
+                    <tr>
+                      <th>8</th>
+                      <td>P003</td>
+                      <td>PC</td>
+                      <td>HP</td>
+                    </tr>
+                    <tr>
+                      <th>9</th>
+                      <td>P004</td>
+                      <td>PC</td>
+                      <td>ASUS</td>
+                    </tr>
+                    <tr>
+                      <th>10</th>
+                      <td>P005</td>
+                      <td>PC</td>
+                      <td>Lenovo</td>
+                    </tr>
+                    <tr>
+                      <th>11</th>
+                      <td>P006</td>
+                      <td>PC</td>
+                      <td>Other</td>
+                    </tr>
+                    <tr>
+                      <th>12</th>
+                      <td>S001</td>
+                      <td>Smartwatch</td>
+                      <td>Apple</td>
+                    </tr>
+                    <tr>
+                      <th>13</th>
+                      <td>S002</td>
+                      <td>Smartwatch</td>
+                      <td>Samsung</td>
+                    </tr>
+                    <tr>
+                      <th>14</th>
+                      <td>S003</td>
+                      <td>Smartwatch</td>
+                      <td>FitBit</td>
+                    </tr>
+                    <tr>
+                      <th>15</th>
+                      <td>ST01</td>
+                      <td>Streaming</td>
+                      <td>Roku</td>
+                    </tr>
+                    <tr>
+                      <th>16</th>
+                      <td>ST02</td>
+                      <td>Streaming</td>
+                      <td>Apple TV</td>
+                    </tr>
+                    <tr>
+                      <th>17</th>
+                      <td>ST03</td>
+                      <td>Streaming</td>
+                      <td>Gaming Console</td>
+                    </tr>
+                    <tr>
+                      <th>18</th>
+                      <td>T001</td>
+                      <td>Tablet</td>
+                      <td>Apple</td>
+                    </tr>
+                    <tr>
+                      <th>19</th>
+                      <td>T002</td>
+                      <td>Tablet</td>
+                      <td>Samsung</td>
+                    </tr>
+                    <tr>
+                      <th>20</th>
+                      <td>T003</td>
+                      <td>Tablet</td>
+                      <td>Amazon</td>
+                    </tr>
+                    <tr>
+                      <th>21</th>
+                      <td>T004</td>
+                      <td>Tablet</td>
+                      <td>Microsoft</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-12">Task 12<a class="anchor-link" href="#Task-12">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Let&#39;s now combine each user&#39;s ad information with their device information.
+            </p>
+            <p>
+              Merge <code>users_ads</code> with <code>devices</code> using the
+              <code>device_id</code> column. Make sure to return all of the rows in
+              <code>users_ads</code>, along with matching device information if it exists.
+            </p>
+            <p>
+              Name the merged DataFrame <code>users_devices</code> and preview the first five rows.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">users_devices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="n">users_ads</span><span class="p">,</span> 
+                         <span class="n">right</span><span class="o">=</span><span class="n">devices</span><span class="p">,</span> 
+                         <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;device_id&#39;</span><span class="p">,</span> 
+                         <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;device_id&#39;</span><span class="p">,</span> 
+                         <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+<span class="n">users_devices</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>user_id</th>
+                      <th>timestamp</th>
+                      <th>device_id</th>
+                      <th>clicked</th>
+                      <th>ad_source</th>
+                      <th>ad_version</th>
+                      <th>device_type</th>
+                      <th>brand</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>U790620</td>
+                      <td>2022-01-01 00:23:33 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                      <td>Twitter</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Google</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>U584867</td>
+                      <td>2022-01-01 01:30:07 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>B</td>
+                      <td>Mobile</td>
+                      <td>Apple</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>U128681</td>
+                      <td>2022-01-01 01:30:14 Saturday</td>
+                      <td>M002</td>
+                      <td>True</td>
+                      <td>TikTok</td>
+                      <td>B</td>
+                      <td>Mobile</td>
+                      <td>Samsung</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>U694898</td>
+                      <td>2022-01-01 01:31:55 Saturday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                      <td>TikTok</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Google</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>U456823</td>
+                      <td>2022-01-01 03:18:25 Saturday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Apple</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-13">Task 13<a class="anchor-link" href="#Task-13">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Calculate the percentage of users who clicked on the advertisement based on their
+              <code>device_type</code> and <code>ad_version</code> they viewed.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">ad_devices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">users_devices</span><span class="p">,</span>
+                           <span class="n">index</span> <span class="o">=</span> <span class="s1">&#39;device_type&#39;</span><span class="p">,</span>
+                           <span class="n">columns</span> <span class="o">=</span> <span class="s1">&#39;ad_version&#39;</span><span class="p">,</span>
+                           <span class="n">values</span> <span class="o">=</span> <span class="s1">&#39;clicked&#39;</span><span class="p">,</span>
+                           <span class="n">aggfunc</span> <span class="o">=</span> <span class="s1">&#39;mean&#39;</span><span class="p">)</span>
+
+<span class="n">ad_devices</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th>ad_version</th>
+                      <th>A</th>
+                      <th>B</th>
+                    </tr>
+                    <tr>
+                      <th>device_type</th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>Mobile</th>
+                      <td>0.121057</td>
+                      <td>0.215877</td>
+                    </tr>
+                    <tr>
+                      <th>PC</th>
+                      <td>0.121311</td>
+                      <td>0.182425</td>
+                    </tr>
+                    <tr>
+                      <th>Tablet</th>
+                      <td>0.128315</td>
+                      <td>0.171348</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-Group-5---Weekday-and-Weekend-Performance-by-Device-Type">
+              Task Group 5 - Weekday and Weekend Performance by Device Type<a
+                class="anchor-link"
+                href="#Task-Group-5---Weekday-and-Weekend-Performance-by-Device-Type"
+                >¶</a
+              >
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-14">Task 14<a class="anchor-link" href="#Task-14">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              Let&#39;s break our analysis down further by weekday versus weekend user behavior.
+            </p>
+            <p>
+              There are various approaches we could use to explore this question, but let&#39;s
+              practice using the <strong>split-apply-combine (SAC)</strong> technique.
+            </p>
+            <p>Recall, SAC involves a three-step process where we:</p>
+            <ol>
+              <li><strong>Split</strong> the dataset into one or more pieces</li>
+              <li><strong>Apply</strong> a function or transformation to each piece</li>
+              <li><strong>Combine</strong> the results from each piece</li>
+            </ol>
+            <p>
+              We&#39;ve provided starter code below that creates a new column
+              <code>day_of_week</code> extracted from the <code>timestamp</code> column indicating
+              the day on which the user viewed the ad.
+            </p>
+            <p>
+              Count the number of users who viewed each ad, grouped by the day of the week and the
+              ad version they saw.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="c1"># Create &#39;day_of_week&#39; column</span>
+<span class="n">users_devices</span><span class="p">[</span><span class="s1">&#39;day_of_week&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">users_devices</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+
+<span class="c1">## YOUR SOLUTION HERE</span>
+<span class="n">users_day</span> <span class="o">=</span> <span class="n">users_devices</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;day_of_week&#39;</span><span class="p">,</span> <span class="s1">&#39;ad_version&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;user_id&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+<span class="n">users_day</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th></th>
+                      <th>user_id</th>
+                    </tr>
+                    <tr>
+                      <th>day_of_week</th>
+                      <th>ad_version</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th rowspan="2" valign="top">Friday</th>
+                      <th>A</th>
+                      <td>1061</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>1061</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Monday</th>
+                      <th>A</th>
+                      <td>1014</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>1037</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Saturday</th>
+                      <th>A</th>
+                      <td>1045</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>996</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Sunday</th>
+                      <th>A</th>
+                      <td>979</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>1057</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Thursday</th>
+                      <th>A</th>
+                      <td>1018</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>997</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Tuesday</th>
+                      <th>A</th>
+                      <td>991</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>1068</td>
+                    </tr>
+                    <tr>
+                      <th rowspan="2" valign="top">Wednesday</th>
+                      <th>A</th>
+                      <td>1046</td>
+                    </tr>
+                    <tr>
+                      <th>B</th>
+                      <td>1054</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-15">Task 15<a class="anchor-link" href="#Task-15">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p><strong>Split</strong> <code>users_devices</code> into two DataFrames:</p>
+            <ul>
+              <li>
+                <code>weekends</code> filtering for users who saw either ad on Saturday or Sunday
+              </li>
+              <li>
+                <code>weekdays</code> filtering for users who saw either ad from Monday to Friday
+              </li>
+            </ul>
+            <p>
+              Use the <code>|</code> operator, and see the hint for more of a refresher on Boolean
+              masks!
+            </p>
+            <p>Preview the first five rows in <code>weekdays</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">is_weekend</span> <span class="o">=</span> <span class="p">(</span><span class="n">users_devices</span><span class="p">[</span><span class="s1">&#39;day_of_week&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Saturday&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">users_devices</span><span class="p">[</span><span class="s1">&#39;day_of_week&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>
+<span class="n">weekends</span> <span class="o">=</span> <span class="n">users_devices</span><span class="p">[</span><span class="n">is_weekend</span><span class="p">]</span>
+<span class="n">weekdays</span> <span class="o">=</span> <span class="n">users_devices</span><span class="p">[</span><span class="o">~</span><span class="n">is_weekend</span><span class="p">]</span>
+
+<span class="n">weekdays</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>user_id</th>
+                      <th>timestamp</th>
+                      <th>device_id</th>
+                      <th>clicked</th>
+                      <th>ad_source</th>
+                      <th>ad_version</th>
+                      <th>device_type</th>
+                      <th>brand</th>
+                      <th>day_of_week</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>72</th>
+                      <td>U532019</td>
+                      <td>2022-01-03 00:01:43 Monday</td>
+                      <td>M004</td>
+                      <td>False</td>
+                      <td>Meta</td>
+                      <td>B</td>
+                      <td>Mobile</td>
+                      <td>Huawei</td>
+                      <td>Monday</td>
+                    </tr>
+                    <tr>
+                      <th>73</th>
+                      <td>U204646</td>
+                      <td>2022-01-03 00:04:32 Monday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Apple</td>
+                      <td>Monday</td>
+                    </tr>
+                    <tr>
+                      <th>74</th>
+                      <td>U484678</td>
+                      <td>2022-01-03 00:10:18 Monday</td>
+                      <td>M003</td>
+                      <td>False</td>
+                      <td>Meta</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Google</td>
+                      <td>Monday</td>
+                    </tr>
+                    <tr>
+                      <th>75</th>
+                      <td>U676966</td>
+                      <td>2022-01-03 00:39:32 Monday</td>
+                      <td>M002</td>
+                      <td>True</td>
+                      <td>Google</td>
+                      <td>B</td>
+                      <td>Mobile</td>
+                      <td>Samsung</td>
+                      <td>Monday</td>
+                    </tr>
+                    <tr>
+                      <th>76</th>
+                      <td>U145580</td>
+                      <td>2022-01-03 00:45:24 Monday</td>
+                      <td>M001</td>
+                      <td>False</td>
+                      <td>Google</td>
+                      <td>A</td>
+                      <td>Mobile</td>
+                      <td>Apple</td>
+                      <td>Monday</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-16">Task 16<a class="anchor-link" href="#Task-16">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p><strong>Apply</strong> aggregation functions.</p>
+            <p>Create a new DataFrame <code>weekday_ctr</code> that computes</p>
+            <ul>
+              <li>the total number of views on weekdays</li>
+              <li>the percent of clicks on weekdays</li>
+            </ul>
+            <p>grouped by <code>device_type</code> and <code>ad_version</code>.</p>
+            <p>
+              Name the two columns <code>weekday_views</code> and <code>weekday_rate</code>, and
+              then reset the index of the DataFrame <code>weekday_ctr</code>.
+            </p>
+            <p>Print the full <code>weekday_ctr</code> DataFrame.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">weekday_ctr</span> <span class="o">=</span> <span class="n">weekdays</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">,</span><span class="s1">&#39;ad_version&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;user_id&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;clicked&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">})</span>
+
+<span class="n">weekday_ctr</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weekday_views&#39;</span><span class="p">,</span><span class="s1">&#39;weekday_ctr&#39;</span><span class="p">]</span>
+
+<span class="n">weekday_ctr</span> <span class="o">=</span> <span class="n">weekday_ctr</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">weekday_ctr</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>device_type</th>
+                      <th>ad_version</th>
+                      <th>weekday_views</th>
+                      <th>weekday_ctr</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>Mobile</td>
+                      <td>A</td>
+                      <td>2517</td>
+                      <td>0.125944</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>Mobile</td>
+                      <td>B</td>
+                      <td>2594</td>
+                      <td>0.212799</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>PC</td>
+                      <td>A</td>
+                      <td>1309</td>
+                      <td>0.128342</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>PC</td>
+                      <td>B</td>
+                      <td>1285</td>
+                      <td>0.189105</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>Tablet</td>
+                      <td>A</td>
+                      <td>1009</td>
+                      <td>0.142716</td>
+                    </tr>
+                    <tr>
+                      <th>5</th>
+                      <td>Tablet</td>
+                      <td>B</td>
+                      <td>1012</td>
+                      <td>0.164032</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-17">Task 17<a class="anchor-link" href="#Task-17">¶</a></h3>
+            <p>Create a new DataFrame <code>weekend_ctr</code> that computes</p>
+            <ul>
+              <li>the total number of clicks on weekends</li>
+              <li>the percent of clicks on weekends</li>
+            </ul>
+            <p>grouped by <code>device_type</code> and <code>ad_version</code>.</p>
+            <p>
+              Name the two columns <code>weekend_views</code> and <code>weekend_rate</code>, and
+              then reset the index of the DataFrame <code>weekend_ctr</code>.
+            </p>
+            <p>Print the full <code>weekend_ctr</code> DataFrame.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">weekend_ctr</span> <span class="o">=</span> <span class="n">weekends</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">,</span><span class="s1">&#39;ad_version&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;user_id&#39;</span><span class="p">:</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+     <span class="s1">&#39;clicked&#39;</span><span class="p">:</span><span class="s1">&#39;mean&#39;</span><span class="p">})</span>
+
+<span class="n">weekend_ctr</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;weekend_views&#39;</span><span class="p">,</span><span class="s1">&#39;weekend_ctr&#39;</span><span class="p">]</span>
+
+<span class="n">weekend_ctr</span> <span class="o">=</span> <span class="n">weekend_ctr</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+<span class="n">weekend_ctr</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>device_type</th>
+                      <th>ad_version</th>
+                      <th>weekend_views</th>
+                      <th>weekend_ctr</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>Mobile</td>
+                      <td>A</td>
+                      <td>1002</td>
+                      <td>0.108782</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>Mobile</td>
+                      <td>B</td>
+                      <td>996</td>
+                      <td>0.223896</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>PC</td>
+                      <td>A</td>
+                      <td>521</td>
+                      <td>0.103647</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>PC</td>
+                      <td>B</td>
+                      <td>513</td>
+                      <td>0.165692</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>Tablet</td>
+                      <td>A</td>
+                      <td>386</td>
+                      <td>0.090674</td>
+                    </tr>
+                    <tr>
+                      <th>5</th>
+                      <td>Tablet</td>
+                      <td>B</td>
+                      <td>412</td>
+                      <td>0.189320</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h3 id="Task-18">Task 18<a class="anchor-link" href="#Task-18">¶</a></h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <p>
+              <strong>Combine</strong> <code>weekday_ctr</code> and <code>weekend_ctr</code> by
+              merging on the <code>device_type</code> and <code>ad_version</code> columns into a
+              DataFrame named <code>combined_ctr</code>. Make sure to return matching rows from both
+              DataFrames.
+            </p>
+            <p>Preview all of the click-through rates in <code>combined_ctr</code>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">combined_ctr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">weekday_ctr</span><span class="p">,</span> 
+                        <span class="n">weekend_ctr</span><span class="p">,</span> 
+                        <span class="n">left_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">,</span> <span class="s1">&#39;ad_version&#39;</span><span class="p">],</span> 
+                        <span class="n">right_on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">,</span> <span class="s1">&#39;ad_version&#39;</span><span class="p">],</span> 
+                        <span class="n">how</span><span class="o">=</span><span class="s1">&#39;inner&#39;</span><span class="p">)</span>
+<span class="n">combined_ctr</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>device_type</th>
+                      <th>ad_version</th>
+                      <th>weekday_views</th>
+                      <th>weekday_ctr</th>
+                      <th>weekend_views</th>
+                      <th>weekend_ctr</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>Mobile</td>
+                      <td>A</td>
+                      <td>2517</td>
+                      <td>0.125944</td>
+                      <td>1002</td>
+                      <td>0.108782</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>Mobile</td>
+                      <td>B</td>
+                      <td>2594</td>
+                      <td>0.212799</td>
+                      <td>996</td>
+                      <td>0.223896</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>PC</td>
+                      <td>A</td>
+                      <td>1309</td>
+                      <td>0.128342</td>
+                      <td>521</td>
+                      <td>0.103647</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>PC</td>
+                      <td>B</td>
+                      <td>1285</td>
+                      <td>0.189105</td>
+                      <td>513</td>
+                      <td>0.165692</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>Tablet</td>
+                      <td>A</td>
+                      <td>1009</td>
+                      <td>0.142716</td>
+                      <td>386</td>
+                      <td>0.090674</td>
+                    </tr>
+                    <tr>
+                      <th>5</th>
+                      <td>Tablet</td>
+                      <td>B</td>
+                      <td>1012</td>
+                      <td>0.164032</td>
+                      <td>412</td>
+                      <td>0.189320</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt"></div>
+          <div
+            class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput"
+            data-mime-type="text/markdown"
+          >
+            <h2 id="Task-19">Task 19<a class="anchor-link" href="#Task-19">¶</a></h2>
+            <p>
+              It looks like there are more weekday views overall, which we&#39;d expect, but
+              let&#39;s see if the average views per day changes from weekend to weekday.
+            </p>
+            <p>
+              Modify <code>weekday_clicks</code> and <code>weekend_clicks</code> to display the
+              average number of clicks per day.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+      <div class="jp-Cell-inputWrapper">
+        <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser"></div>
+        <div class="jp-InputArea jp-Cell-inputArea">
+          <div class="jp-InputPrompt jp-InputArea-prompt">In [19]:</div>
+          <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+            <div class="CodeMirror cm-s-jupyter">
+              <div class="highlight hl-ipython3">
+                <pre><span></span><span class="n">combined_ctr</span><span class="p">[</span><span class="s1">&#39;weekday_views&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">combined_ctr</span><span class="p">[</span><span class="s1">&#39;weekday_views&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">5</span>
+<span class="n">combined_ctr</span><span class="p">[</span><span class="s1">&#39;weekend_views&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">combined_ctr</span><span class="p">[</span><span class="s1">&#39;weekend_views&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+
+<span class="n">combined_ctr</span>
+</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-Cell-outputWrapper">
+        <div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser"></div>
+
+        <div class="jp-OutputArea jp-Cell-outputArea">
+          <div class="jp-OutputArea-child jp-OutputArea-executeResult">
+            <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
+
+            <div
+              class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output jp-OutputArea-executeResult"
+              data-mime-type="text/html"
+            >
+              <div>
+                <style scoped="">
+                  .dataframe tbody tr th:only-of-type {
+                    vertical-align: middle;
+                  }
+
+                  .dataframe tbody tr th {
+                    vertical-align: top;
+                  }
+
+                  .dataframe thead th {
+                    text-align: right;
+                  }
+                </style>
+                <table border="1" class="dataframe">
+                  <thead>
+                    <tr style="text-align: right">
+                      <th></th>
+                      <th>device_type</th>
+                      <th>ad_version</th>
+                      <th>weekday_views</th>
+                      <th>weekday_ctr</th>
+                      <th>weekend_views</th>
+                      <th>weekend_ctr</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th>0</th>
+                      <td>Mobile</td>
+                      <td>A</td>
+                      <td>503.4</td>
+                      <td>0.125944</td>
+                      <td>501.0</td>
+                      <td>0.108782</td>
+                    </tr>
+                    <tr>
+                      <th>1</th>
+                      <td>Mobile</td>
+                      <td>B</td>
+                      <td>518.8</td>
+                      <td>0.212799</td>
+                      <td>498.0</td>
+                      <td>0.223896</td>
+                    </tr>
+                    <tr>
+                      <th>2</th>
+                      <td>PC</td>
+                      <td>A</td>
+                      <td>261.8</td>
+                      <td>0.128342</td>
+                      <td>260.5</td>
+                      <td>0.103647</td>
+                    </tr>
+                    <tr>
+                      <th>3</th>
+                      <td>PC</td>
+                      <td>B</td>
+                      <td>257.0</td>
+                      <td>0.189105</td>
+                      <td>256.5</td>
+                      <td>0.165692</td>
+                    </tr>
+                    <tr>
+                      <th>4</th>
+                      <td>Tablet</td>
+                      <td>A</td>
+                      <td>201.8</td>
+                      <td>0.142716</td>
+                      <td>193.0</td>
+                      <td>0.090674</td>
+                    </tr>
+                    <tr>
+                      <th>5</th>
+                      <td>Tablet</td>
+                      <td>B</td>
+                      <td>202.4</td>
+                      <td>0.164032</td>
+                      <td>206.0</td>
+                      <td>0.189320</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="text/javascript" src="/relay.js"></script>
+  </body>
+</html>
